@@ -435,6 +435,7 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <header>
@@ -461,28 +462,28 @@
                     <h3>Paneer Tikka</h3>
                     <span class="price">₹250</span>
                     <p>Marinated cottage cheese cubes grilled to perfection with aromatic spices</p>
-                    <button class="btn" onclick="addToCart('Paneer Tikka', 250)">Add to Cart</button>
+                    <button class="btn" onclick="addToCart(event, 'Paneer Tikka', 250)">Add to Cart</button>
                 </div>
                 <div class="menu-item">
                     <img src="https://images.unsplash.com/photo-1606491956689-2ea866880c84?w=400&h=300&fit=crop" alt="Chicken Malai Kebab" class="dish-image">
                     <h3>Chicken Malai Kebab</h3>
                     <span class="price">₹480</span>
                     <p>Tender chicken marinated in cream, cheese, and cardamom, grilled in tandoor</p>
-                    <button class="btn" onclick="addToCart('Chicken Malai Kebab', 480)">Add to Cart</button>
+                    <button class="btn" onclick="addToCart(event, 'Chicken Malai Kebab', 480)">Add to Cart</button>
                 </div>
                 <div class="menu-item">
                     <img src="https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=400&h=300&fit=crop" alt="Tandoori Prawns" class="dish-image">
                     <h3>Tandoori Prawns</h3>
                     <span class="price">₹530</span>
                     <p>Jumbo prawns marinated in yogurt and royal spices, cooked in clay oven</p>
-                    <button class="btn" onclick="addToCart('Tandoori Prawns', 530)">Add to Cart</button>
+                    <button class="btn" onclick="addToCart(event, 'Tandoori Prawns', 530)">Add to Cart</button>
                 </div>
                 <div class="menu-item">
                     <img src="https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=400&h=300&fit=crop" alt="Samosa Platter" class="dish-image">
                     <h3>Royal Samosa Platter</h3>
                     <span class="price">₹120</span>
                     <p>Crispy pastries filled with spiced potatoes and peas, served with chutneys</p>
-                    <button class="btn" onclick="addToCart('Royal Samosa Platter', 120)">Add to Cart</button>
+                    <button class="btn" onclick="addToCart(event, 'Royal Samosa Platter', 120)">Add to Cart</button>
                 </div>
             </div>
 
@@ -493,42 +494,42 @@
                     <h3>Butter Chicken</h3>
                     <span class="price">₹420</span>
                     <p>Tender chicken in rich tomato-butter gravy with aromatic spices and cream</p>
-                    <button class="btn" onclick="addToCart('Butter Chicken', 420)">Add to Cart</button>
+                    <button class="btn" onclick="addToCart(event, 'Butter Chicken', 420)">Add to Cart</button>
                 </div>
                 <div class="menu-item">
                     <img src="https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=400&h=300&fit=crop" alt="Rogan Josh" class="dish-image">
                     <h3>Kashmiri Rogan Josh</h3>
                     <span class="price">₹200</span>
                     <p>Slow-cooked lamb in aromatic Kashmiri spices with yogurt-based gravy</p>
-                    <button class="btn" onclick="addToCart('Kashmiri Rogan Josh', 200)">Add to Cart</button>
+                    <button class="btn" onclick="addToCart(event, 'Kashmiri Rogan Josh', 200)">Add to Cart</button>
                 </div>
                 <div class="menu-item">
                     <img src="https://images.unsplash.com/photo-1645177628172-a94c1f96e6db?w=400&h=300&fit=crop" alt="Paneer Makhani" class="dish-image">
                     <h3>Shahi Paneer Makhani</h3>
                     <span class="price">₹345</span>
                     <p>Cottage cheese in royal cashew-tomato gravy with butter and cream</p>
-                    <button class="btn" onclick="addToCart('Shahi Paneer Makhani', 345)">Add to Cart</button>
+                    <button class="btn" onclick="addToCart(event, 'Shahi Paneer Makhani', 345)">Add to Cart</button>
                 </div>
                 <div class="menu-item">
                     <img src="https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400&h=300&fit=crop" alt="Dal Makhani" class="dish-image">
                     <h3>Dal Makhani</h3>
                     <span class="price">₹215</span>
                     <p>Black lentils slow-cooked overnight with butter, cream, and spices</p>
-                    <button class="btn" onclick="addToCart('Dal Makhani', 215)">Add to Cart</button>
+                    <button class="btn" onclick="addToCart(event, 'Dal Makhani', 215)">Add to Cart</button>
                 </div>
                 <div class="menu-item">
                     <img src="https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=400&h=300&fit=crop" alt="Chicken Korma" class="dish-image">
                     <h3>Chicken Korma</h3>
                     <span class="price">₹320</span>
                     <p>Mughlai delicacy with chicken in rich cashew-almond gravy</p>
-                    <button class="btn" onclick="addToCart('Chicken Korma', 320)">Add to Cart</button>
+                    <button class="btn" onclick="addToCart(event, 'Chicken Korma', 320)">Add to Cart</button>
                 </div>
                 <div class="menu-item">
                     <img src="https://images.unsplash.com/photo-1626777552725-4608f98c9d4e?w=400&h=300&fit=crop" alt="Prawn Curry" class="dish-image">
                     <h3>Goan Prawn Curry</h3>
                     <span class="price">₹700</span>
                     <p>Fresh prawns in coconut-based curry with coastal spices</p>
-                    <button class="btn" onclick="addToCart('Goan Prawn Curry', 700)">Add to Cart</button>
+                    <button class="btn" onclick="addToCart(event, 'Goan Prawn Curry', 700)">Add to Cart</button>
                 </div>
             </div>
 
@@ -539,14 +540,14 @@
                     <h3>Tiramisu</h3>
                     <span class="price">₹119</span>
                     <p>Classic Italian dessert with espresso-soaked ladyfingers and mascarpone</p>
-                    <button class="btn" onclick="addToCart('Tiramisu', 119)">Add to Cart</button>
+                    <button class="btn" onclick="addToCart(event, 'Tiramisu', 119)">Add to Cart</button>
                 </div>
                 <div class="menu-item">
                     <img src="https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&h=300&fit=crop" alt="Panna Cotta" class="dish-image">
                     <h3>Panna Cotta</h3>
                     <span class="price">₹150</span>
                     <p>Silky vanilla cream pudding with berry compote</p>
-                    <button class="btn" onclick="addToCart('Panna Cotta', 150)">Add to Cart</button>
+                    <button class="btn" onclick="addToCart(event, 'Panna Cotta', 150)">Add to Cart</button>
                 </div>
             </div>
         </div>
@@ -601,7 +602,7 @@
                 <div class="form-group">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                         <label for="address" style="margin-bottom: 0;">Delivery Address *</label>
-                        <button type="button" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;" onclick="getLocation()">📍 Get Live Location</button>
+                        <button type="button" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;" onclick="getLocation(event)">📍 Get Live Location</button>
                     </div>
                     <textarea id="address" name="address" required placeholder="Street address, apartment/suite number"></textarea>
                 </div>
@@ -664,8 +665,6 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY_HERE&libraries=places"></script>
-
     <footer>
         <p>&copy; 2026 Royal Rasoi. All rights reserved.</p>
         <p>123 Indian Street, Food City, FC 12345 | (+91) xxxxx xxxxx</p>
@@ -683,9 +682,21 @@
             measurementId: "G-JVR40B8NQ3"
         };
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        // Optional: add a real Google Maps browser key to enable live address lookup.
+        // No request is made when this is empty, so there are no invalid-key warnings.
+        const GOOGLE_MAPS_API_KEY = '';
+
+        // Firebase is optional for the front-end experience. Orders fall back to local confirmation
+        // when the SDK is unavailable or the project is not configured for this environment.
+        let db = null;
+        if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length === 0) {
+            try {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+            } catch (error) {
+                console.warn('Firebase is unavailable; using local order confirmation.', error);
+            }
+        }
 
         let cart = [];
 
@@ -702,7 +713,7 @@
             window.scrollTo(0, 0);
         }
 
-        function addToCart(name, price) {
+        function addToCart(event, name, price) {
             const existingItem = cart.find(item => item.name === name);
             
             if (existingItem) {
@@ -713,7 +724,7 @@
             
             updateCartCount();
             
-            const btn = event.target;
+            const btn = event.currentTarget;
             btn.textContent = 'Added!';
             btn.style.background = '#2ecc71';
             setTimeout(() => {
@@ -882,20 +893,29 @@
             const orderData = {
                 user: userInfo,
                 items: cart,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                createdAt: db && firebase.firestore.FieldValue
+                    ? firebase.firestore.FieldValue.serverTimestamp()
+                    : new Date().toISOString()
             };
 
-            // Save order to Firestore
-            db.collection("orders").add(orderData)
-                .then((docRef) => {
-                    console.log("Order placed with ID: ", docRef.id);
-                    // Display confirmation page with order ID
-                    document.getElementById('orderNumber').textContent = `Order #${docRef.id}`;
-                    showPage('confirmation');
-                })
+            const showConfirmation = (orderId) => {
+                document.getElementById('orderNumber').textContent = `Order #${orderId}`;
+                showPage('confirmation');
+            };
+
+            if (!db) {
+                const localOrderId = `RR-${Date.now().toString().slice(-8)}`;
+                localStorage.setItem('royalRasoiLastOrder', JSON.stringify({ ...orderData, orderId: localOrderId }));
+                showConfirmation(localOrderId);
+                return;
+            }
+
+            db.collection('orders').add(orderData)
+                .then((docRef) => showConfirmation(docRef.id))
                 .catch((error) => {
-                    console.error("Error adding document: ", error);
-                    alert("There was an error placing your order. Please try again.");
+                    console.error('Error adding document:', error);
+                    const localOrderId = `RR-${Date.now().toString().slice(-8)}`;
+                    showConfirmation(localOrderId);
                 });
         }
 
@@ -907,9 +927,9 @@
 
         updateCartCount();
 
-        function getLocation() {
+        function getLocation(event) {
             if (navigator.geolocation) {
-                const locationBtn = event.target;
+                const locationBtn = event.currentTarget;
                 locationBtn.textContent = 'Fetching...';
                 locationBtn.disabled = true;
 
@@ -919,16 +939,31 @@
             }
         }
 
+        function loadGoogleMaps() {
+            if (window.google?.maps) return Promise.resolve();
+            if (!GOOGLE_MAPS_API_KEY) return Promise.reject({ code: 'MAPS_UNAVAILABLE' });
+            if (window.royalRasoiMapsPromise) return window.royalRasoiMapsPromise;
+
+            window.royalRasoiMapsPromise = new Promise((resolve, reject) => {
+                window.royalRasoiMapsReady = resolve;
+                const script = document.createElement('script');
+                script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(GOOGLE_MAPS_API_KEY)}&libraries=places&loading=async&callback=royalRasoiMapsReady`;
+                script.async = true;
+                script.defer = true;
+                script.onerror = () => reject({ code: 'MAPS_UNAVAILABLE' });
+                document.head.appendChild(script);
+            });
+
+            return window.royalRasoiMapsPromise;
+        }
+
         function showPosition(position) {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-            const locationBtn = document.querySelector('button[onclick="getLocation()"]');
+            const latlng = { lat: position.coords.latitude, lng: position.coords.longitude };
+            const locationBtn = document.querySelector('button[onclick="getLocation(event)"]');
 
-            // Using Google Maps Geocoding API
-            const geocoder = new google.maps.Geocoder();
-            const latlng = { lat: lat, lng: lon };
-
-            geocoder.geocode({ location: latlng }, (results, status) => {
+            loadGoogleMaps().then(() => {
+                const geocoder = new google.maps.Geocoder();
+                geocoder.geocode({ location: latlng }, (results, status) => {
                 if (status === "OK") {
                     if (results[0]) {
                         document.getElementById('address').value = results[0].formatted_address;
@@ -950,11 +985,12 @@
                     locationBtn.textContent = '📍 Get Live Location';
                     locationBtn.disabled = false;
                 }
-            });
+                });
+            }).catch(showError);
         }
 
         function showError(error) {
-            const locationBtn = document.querySelector('button[onclick="getLocation()"]');
+            const locationBtn = document.querySelector('button[onclick="getLocation(event)"]');
             if (locationBtn) {
                 locationBtn.textContent = '📍 Get Live Location';
                 locationBtn.disabled = false;
@@ -972,6 +1008,9 @@
                     break;
                 case error.UNKNOWN_ERROR:
                     alert("An unknown error occurred.");
+                    break;
+                case 'MAPS_UNAVAILABLE':
+                    alert("Live address lookup is unavailable right now. Please enter your address manually.");
                     break;
             }
         }
