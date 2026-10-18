@@ -18,7 +18,7 @@
     </section>
     <section id="profilePanel" hidden>
       <p id="signedInAs"></p>
-      <form id="profileForm"><label>Firebase Auth user UID<input id="uid" required></label><label>Tenant ID<input id="tenantId" pattern="[a-z0-9\-]+" required></label><label>Role<select id="role"><option>owner</option><option>manager</option><option>staff</option></select></label><label>Display name<input id="displayName"></label><button type="submit">Create merchant profile</button> <button id="signOut" class="secondary" type="button">Sign out</button></form>
+      <form id="profileForm"><label>Firebase Auth user UID<input id="uid" required></label><label>Tenant ID<input id="tenantId" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" required></label><label>Role<select id="role"><option>owner</option><option>manager</option><option>staff</option><option>receptionist</option><option>kitchen</option><option>kitchen_staff</option><option>waiter</option></select></label><label>Display name<input id="displayName"></label><button type="submit">Create merchant profile</button> <button id="signOut" class="secondary" type="button">Sign out</button></form>
     </section>
     <p id="message" class="error" role="alert"></p>
   </main>

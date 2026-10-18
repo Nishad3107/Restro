@@ -12,7 +12,7 @@ const stripeWebhookSecret = defineSecret('STRIPE_WEBHOOK_SECRET');
 const cleanText = (value, maxLength = 200) => typeof value === 'string' ? value.trim().slice(0, maxLength) : '';
 const validId = value => /^[a-z0-9-]{1,80}$/i.test(value || '');
 const allowedStatuses = ['New', 'Accepted', 'Preparing', 'Completed', 'Rejected', 'ORDER_PLACED', 'ORDER_ACCEPTED', 'PREPARING', 'READY', 'SERVED', 'BILL_REQUESTED', 'PAID', 'CANCELLED'];
-const allowedFulfillmentTypes = ['delivery', 'pickup'];
+const allowedFulfillmentTypes = ['delivery', 'pickup', 'dine-in'];
 const dineInStatuses = ['ORDER_PLACED', 'ORDER_ACCEPTED', 'PREPARING', 'READY', 'SERVED', 'BILL_REQUESTED', 'PAID', 'COMPLETED', 'CANCELLED'];
 const staffRoles = ['owner', 'manager', 'staff', 'receptionist', 'kitchen', 'kitchen_staff', 'waiter', 'platform_admin'];
 
@@ -57,7 +57,7 @@ function minutesSinceMidnight(value) {
 
 function isWithinBusinessHours(hours, timeZone = 'Asia/Kolkata', date = new Date()) {
   if (!hours || typeof hours !== 'object') return true;
-  const parts = new Intl.DateTimeFormat('en-US', { timeZone, weekday: 'long', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(date).reduce((result, part) => ({ ...result, [part.type]: part.value }), {});
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone, weekday: 'long', hour: '2-digit', minute: '2-digit', hour12: false, hourCycle: 'h23' }).formatToParts(date).reduce((result, part) => ({ ...result, [part.type]: part.value }), {});
   const day = String(parts.weekday || '').toLowerCase();
   const schedule = hours[day];
   if (!schedule || schedule.closed) return false;
@@ -218,7 +218,7 @@ exports.updateOrderStatus = onCall(async request => {
   const orderId = cleanText(data.orderId, 100);
   const status = cleanText(data.status, 30);
   if (!validId(tenantId) || !validId(locationId) || !orderId || !allowedStatuses.includes(status)) throw new HttpsError('invalid-argument', 'Invalid order status request.');
-  await requireTenantMember(request, tenantId, ['owner', 'manager', 'staff', 'platform_admin']);
+  await requireTenantMember(request, tenantId, ['owner', 'manager', 'staff', 'receptionist', 'kitchen', 'kitchen_staff', 'waiter', 'platform_admin']);
   const orderRef = locationRef(tenantId, locationId).collection('orders').doc(orderId);
   const snapshot = await orderRef.get();
   if (!snapshot.exists) throw new HttpsError('not-found', 'Order not found.');
@@ -226,8 +226,11 @@ exports.updateOrderStatus = onCall(async request => {
   if (order.orderType === 'DINE_IN' && !dineInStatuses.includes(status)) throw new HttpsError('invalid-argument', 'Invalid dine-in order status.');
   await orderRef.update({ status, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
   if (order.orderType === 'DINE_IN' && order.sessionId && status === 'COMPLETED') {
-    await locationRef(tenantId, locationId).collection('diningSessions').doc(order.sessionId).set({ status: 'COMPLETED', completedAt: admin.firestore.FieldValue.serverTimestamp(), updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
-    if (order.tableId) await tableRef(tenantId, locationId, order.tableId).set({ status: 'AVAILABLE', activeSessionId: null, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    const sessionOrders = await locationRef(tenantId, locationId).collection('orders').where('sessionId', '==', order.sessionId).get();
+    if (sessionOrders.docs.every(doc => ['COMPLETED', 'CANCELLED'].includes(doc.data().status))) {
+      await locationRef(tenantId, locationId).collection('diningSessions').doc(order.sessionId).set({ status: 'COMPLETED', completedAt: admin.firestore.FieldValue.serverTimestamp(), updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      if (order.tableId) await tableRef(tenantId, locationId, order.tableId).set({ status: 'AVAILABLE', activeSessionId: null, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    }
   }
   await writeAuditLog(tenantId, locationId, 'order.status_updated', request.auth, { orderId, status });
   return { orderId, status };
@@ -262,7 +265,7 @@ async function requireActiveSession(tenantId, locationId, sessionId) {
   if (!sessionId) throw new HttpsError('invalid-argument', 'An active dining session is required.');
   const sessionRef = locationRef(tenantId, locationId).collection('diningSessions').doc(sessionId);
   const snapshot = await sessionRef.get();
-  if (!snapshot.exists || snapshot.data().status !== 'ACTIVE') throw new HttpsError('failed-precondition', 'This dining session is no longer active.');
+  if (!snapshot.exists || !['ACTIVE', 'BILL_REQUESTED'].includes(snapshot.data().status)) throw new HttpsError('failed-precondition', 'This dining session is no longer active.');
   return { ref: sessionRef, data: snapshot.data() };
 }
 
@@ -333,8 +336,9 @@ exports.cancelOrder = onCall(async request => {
   if (!cancellableStatuses.includes(order.status)) throw new HttpsError('failed-precondition', 'This order can no longer be cancelled.');
   const cancelledStatus = order.orderType === 'DINE_IN' ? 'CANCELLED' : 'Rejected';
   await ref.update({ status: cancelledStatus, cancellationReason: cleanText(data.reason, 300) || 'Cancelled', cancelledAt: admin.firestore.FieldValue.serverTimestamp(), updatedAt: admin.firestore.FieldValue.serverTimestamp() });
-  await writeAuditLog(tenantId, locationId, 'order.cancelled', request.auth, { orderId, refundRequired: order.paymentType !== 'cash' });
-  return { orderId, status: cancelledStatus, refundRequired: order.paymentType !== 'cash' };
+  const refundRequired = order.user?.paymentType !== 'cash';
+  await writeAuditLog(tenantId, locationId, 'order.cancelled', request.auth, { orderId, refundRequired });
+  return { orderId, status: cancelledStatus, refundRequired };
 });
 
 exports.recordAuditEvent = onCall(async request => {

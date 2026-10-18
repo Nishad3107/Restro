@@ -652,10 +652,10 @@
                 <h2>🎉 Order Confirmed!</h2>
                 <p style="font-size: 1.2rem; margin: 1rem 0;">Thank you for your order!</p>
                 <div class="order-number" id="orderNumber"></div>
-                <p style="font-size: 1.1rem; margin: 2rem 0;">Your delicious meal is being prepared and will be delivered soon.</p>
+                <p id="confirmationMessage" style="font-size: 1.1rem; margin: 2rem 0;">Your delicious meal is being prepared and will be delivered soon.</p>
                 <p id="confirmationTable" hidden style="font-size:1.1rem;color:#f4a261;font-weight:700;"></p>
                 <div id="orderStatus" aria-live="polite" style="background:rgba(255,255,255,.35);border-radius:10px;color:#486048;font-weight:700;margin:1rem auto;padding:.8rem;max-width:360px;">Status: New</div>
-                <p style="color: #ddd;">Estimated delivery time: 30-45 minutes</p>
+                <p id="estimatedTime" style="color: #ddd;">Estimated delivery time: 30-45 minutes</p>
                 <button class="btn" id="cancelOrderButton" type="button" onclick="cancelCurrentOrder()" style="background:#b24f38;margin-top:1rem;">Cancel Order</button>
                 <div id="dineInActions" hidden style="margin-top:1rem"><button class="btn btn-secondary" type="button" onclick="requestTableHelp('WAITER')">🔔 Call Waiter</button> <button class="btn btn-secondary" type="button" onclick="requestTableHelp('BILL')">🧾 Request Bill</button></div>
                 <button class="btn" onclick="resetAndGoHome()" style="margin-top: 2rem;">Order Again</button>
@@ -952,7 +952,7 @@
                 tenantId: TENANT_ID, locationId: LOCATION_ID, orderId, phone
             }).then(result => {
                 statusElement.textContent = `Status: ${result.data.status}`;
-                if (['Completed', 'Rejected'].includes(result.data.status)) window.clearInterval(orderStatusTimer);
+                if (['Completed', 'Rejected', 'CANCELLED', 'COMPLETED'].includes(result.data.status)) window.clearInterval(orderStatusTimer);
             }).catch(() => {});
             checkStatus();
             orderStatusTimer = window.setInterval(checkStatus, 10000);
@@ -1172,6 +1172,8 @@
 
             const showConfirmation = (orderId, sessionId = null) => {
                 currentOrder = { orderId, phone: orderData.user.phone };
+                const cancelButton = document.getElementById('cancelOrderButton');
+                if (cancelButton) { cancelButton.hidden = false; cancelButton.disabled = false; }
                 if (ORDER_TYPE === 'DINE_IN' && sessionId) { orderData.sessionId = sessionId; localStorage.setItem(SESSION_STORAGE_KEY, sessionId); }
                 saveMerchantOrder(orderId, orderData);
                 document.getElementById('orderNumber').textContent = `Order #${orderId}`;
@@ -1179,6 +1181,10 @@
                 if (confirmationTable && TABLE_ID) { confirmationTable.hidden = false; confirmationTable.textContent = `Table ${TABLE_ID}`; }
                 const dineInActions = document.getElementById('dineInActions');
                 if (dineInActions) dineInActions.hidden = ORDER_TYPE !== 'DINE_IN';
+                const confirmationMessage = document.getElementById('confirmationMessage');
+                if (confirmationMessage) confirmationMessage.textContent = ORDER_TYPE === 'DINE_IN' ? 'Your order has been sent to the restaurant.' : 'Your delicious meal is being prepared and will be delivered soon.';
+                const estimatedTime = document.getElementById('estimatedTime');
+                if (estimatedTime) estimatedTime.textContent = ORDER_TYPE === 'DINE_IN' ? 'Estimated preparation time will be shown by the restaurant.' : 'Estimated delivery time: 30-45 minutes';
                 startOrderStatusTracking(orderId, orderData.user.phone);
                 showPage('confirmation');
             };
@@ -1215,7 +1221,7 @@
             button.disabled = true;
             firebase.app().functions('asia-south1').httpsCallable('cancelOrder')({ tenantId: TENANT_ID, locationId: LOCATION_ID, orderId: currentOrder.orderId, phone: currentOrder.phone, reason: 'Customer requested cancellation' }).then(() => {
                 document.getElementById('orderStatus').textContent = 'Status: Rejected (cancelled)';
-                button.remove();
+                button.hidden = true;
                 window.clearInterval(orderStatusTimer);
             }).catch(error => {
                 button.disabled = false;
