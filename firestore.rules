@@ -1,0 +1,106 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function hasProfile() {
+      return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function profile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isPlatformAdmin() {
+      return hasProfile() && profile().role == 'platform_admin';
+    }
+
+    function isTenantMember(tenantId) {
+      return hasProfile() && (isPlatformAdmin() || profile().tenantId == tenantId) &&
+        profile().role in ['owner', 'manager', 'staff', 'receptionist', 'kitchen', 'kitchen_staff', 'waiter', 'platform_admin'];
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isPlatformAdmin());
+      // User profiles are provisioned by the platform administrator, not by the browser.
+      allow create, update, delete: if false;
+    }
+
+    match /tenants/{tenantId} {
+      allow read: if true;
+      allow update: if isTenantMember(tenantId) && profile().role in ['owner', 'platform_admin'];
+      allow create, delete: if isPlatformAdmin();
+
+      match /locations/{locationId} {
+        allow read: if true;
+        allow update: if isTenantMember(tenantId) && profile().role in ['owner', 'platform_admin'];
+        allow create: if isTenantMember(tenantId) && profile().role in ['owner', 'platform_admin'];
+        allow delete: if isPlatformAdmin();
+
+        match /menu/{itemId} {
+          allow read: if true;
+          allow write: if isTenantMember(tenantId) && profile().role in ['owner', 'manager', 'platform_admin'];
+        }
+
+        match /orders/{orderId} {
+          allow read: if isTenantMember(tenantId);
+          // Public orders are created only by the trusted createOrder function.
+          allow create: if false;
+          allow update, delete: if false;
+        }
+
+        match /tables/{tableId} {
+          allow read: if isTenantMember(tenantId);
+          allow write: if false;
+        }
+
+        match /diningSessions/{sessionId} {
+          allow read: if isTenantMember(tenantId);
+          allow write: if false;
+        }
+
+        match /tableRequests/{requestId} {
+          allow read: if isTenantMember(tenantId);
+          allow write: if false;
+        }
+
+        match /bills/{billId} {
+          allow read: if isTenantMember(tenantId);
+          allow write: if false;
+        }
+
+        match /auditLogs/{auditId} {
+          allow read: if isTenantMember(tenantId) && profile().role in ['owner', 'manager', 'platform_admin'];
+          allow write: if false;
+        }
+      }
+
+      match /menu/{itemId} {
+        allow read: if true;
+        allow write: if isTenantMember(tenantId) && profile().role in ['owner', 'manager', 'platform_admin'];
+      }
+
+      match /orders/{orderId} {
+        allow read: if isTenantMember(tenantId);
+        // Orders must be created through a trusted server endpoint that recalculates totals.
+        allow create, update, delete: if false;
+      }
+    }
+
+    // The legacy client-side order path is intentionally blocked in production rules.
+    match /orders/{orderId} {
+      allow read, write: if false;
+    }
+
+    match /rateLimits/{rateLimitId} {
+      allow read, write: if false;
+    }
+
+  match /paymentEvents/{eventId} {
+    allow read, write: if false;
+  }
+  }
+}
