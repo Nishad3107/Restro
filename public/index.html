@@ -441,12 +441,14 @@
     <header>
         <h1>Royal Rasoi</h1>
         <p>Authentic Indian Royal Cuisine</p>
+        <div id="orderingContext" style="background:rgba(0,0,0,.45);border:1px solid rgba(244,162,97,.5);border-radius:999px;color:#fff;padding:.55rem 1rem;z-index:1;">Order for delivery</div>
     </header>
 
     <nav>
         <ul>
-            <li><a onclick="showPage('menu')">Menu</a></li>
-            <li><a onclick="showPage('cart')">Cart</a></li>
+            <li><a href="#menu" onclick="showPage('menu'); return false;">Menu</a></li>
+            <li><a href="#cart" onclick="showPage('cart'); return false;">Cart</a></li>
+            <li><a href="admin.html">Merchant Dashboard</a></li>
         </ul>
     </nav>
 
@@ -557,7 +559,7 @@
     <div id="cart" class="page">
         <div class="container">
             <h2 class="section-title">Your Cart</h2>
-            <div id="cartContent"></div>
+            <div id="cartContent" aria-live="polite"></div>
             <div style="text-align: center; margin-top: 2rem;">
                 <button class="btn btn-secondary" onclick="showPage('menu')" style="margin-right: 1rem;">Continue Shopping</button>
                 <button class="btn" onclick="showPage('checkout')" id="checkoutBtn" style="display: none;">Proceed to Checkout</button>
@@ -569,37 +571,38 @@
     <div id="checkout" class="page">
         <div class="container">
             <h2 class="section-title">Checkout</h2>
+            <div id="tableNotice" hidden style="background:rgba(244,162,97,.15);border:1px solid #f4a261;border-radius:12px;margin-bottom:1.5rem;padding:1rem;text-align:center;">Ordering for <strong id="checkoutTableName"></strong></div>
             
             <div class="order-summary">
                 <h3>Order Summary</h3>
-                <div id="checkoutSummary"></div>
+                <div id="checkoutSummary" aria-live="polite"></div>
             </div>
 
             <form onsubmit="placeOrder(event)">
-                <h3 style="color: #f4a261; margin-bottom: 1.5rem; font-size: 1.8rem;">Delivery Information</h3>
+                <h3 id="customerInfoHeading" style="color: #f4a261; margin-bottom: 1.5rem; font-size: 1.8rem;">Delivery Information</h3>
                 
                 <div class="form-grid">
                     <div class="form-group">
-                        <label>First Name *</label>
-                        <input type="text" name="firstName" required>
+                        <label for="firstName">First Name *</label>
+                        <input type="text" id="firstName" name="firstName" autocomplete="given-name" required>
                     </div>
                     <div class="form-group">
-                        <label>Last Name *</label>
-                        <input type="text" name="lastName" required>
+                        <label for="lastName">Last Name *</label>
+                        <input type="text" id="lastName" name="lastName" autocomplete="family-name" required>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Email *</label>
-                    <input type="email" name="email" required>
+                <div class="form-group delivery-only-field">
+                    <label for="email">Email *</label>
+                    <input type="email" id="email" name="email" autocomplete="email" required>
                 </div>
 
                 <div class="form-group">
-                    <label>Phone Number *</label>
-                    <input type="tel" name="phone" required>
+                    <label for="phone">Phone Number *</label>
+                        <input type="tel" id="phone" name="phone" autocomplete="tel" required pattern="[0-9]{10,15}" title="Enter a valid phone number with 10 to 15 digits">
                 </div>
 
-                <div class="form-group">
+                <div class="form-group delivery-only-field">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                         <label for="address" style="margin-bottom: 0;">Delivery Address *</label>
                         <button type="button" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;" onclick="getLocation(event)">📍 Get Live Location</button>
@@ -607,30 +610,30 @@
                     <textarea id="address" name="address" required placeholder="Street address, apartment/suite number"></textarea>
                 </div>
 
-                <div class="form-grid">
+                <div class="form-grid delivery-only-field">
                     <div class="form-group">
-                        <label>City *</label>
+                        <label for="city">City *</label>
                         <input type="text" id="city" name="city" required>
                     </div>
                     <div class="form-group">
-                        <label>Zip Code *</label>
-                        <input type="text" id="zip" name="zip" required>
+                        <label for="zip">Zip Code *</label>
+                        <input type="text" id="zip" name="zip" required inputmode="numeric" pattern="[0-9]{5,6}" title="Enter a valid 5 or 6 digit ZIP code">
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Delivery Instructions</label>
-                    <textarea name="instructions" placeholder="Gate code, special instructions, etc."></textarea>
+                <div class="form-group delivery-only-field">
+                    <label for="instructions">Delivery Instructions</label>
+                    <textarea id="instructions" name="instructions" placeholder="Gate code, special instructions, etc."></textarea>
                 </div>
 
                 <h3 style="color: #f4a261; margin: 2rem 0 1.5rem 0; font-size: 1.8rem;">Payment Method</h3>
                 
                 <div class="form-group">
-                    <label>Payment Type *</label>
-                    <select name="paymentType" required>
+                    <label for="paymentType">Payment Type *</label>
+                    <select id="paymentType" name="paymentType" required>
                         <option value="">Select payment method</option>
-                        <option value="card">Credit/Debit Card</option>
                         <option value="cash">Cash on Delivery</option>
+                        <option value="card" disabled>Card payment (coming soon)</option>
                     </select>
                 </div>
 
@@ -650,24 +653,30 @@
                 <p style="font-size: 1.2rem; margin: 1rem 0;">Thank you for your order!</p>
                 <div class="order-number" id="orderNumber"></div>
                 <p style="font-size: 1.1rem; margin: 2rem 0;">Your delicious meal is being prepared and will be delivered soon.</p>
+                <p id="confirmationTable" hidden style="font-size:1.1rem;color:#f4a261;font-weight:700;"></p>
+                <div id="orderStatus" aria-live="polite" style="background:rgba(255,255,255,.35);border-radius:10px;color:#486048;font-weight:700;margin:1rem auto;padding:.8rem;max-width:360px;">Status: New</div>
                 <p style="color: #ddd;">Estimated delivery time: 30-45 minutes</p>
+                <button class="btn" id="cancelOrderButton" type="button" onclick="cancelCurrentOrder()" style="background:#b24f38;margin-top:1rem;">Cancel Order</button>
+                <div id="dineInActions" hidden style="margin-top:1rem"><button class="btn btn-secondary" type="button" onclick="requestTableHelp('WAITER')">🔔 Call Waiter</button> <button class="btn btn-secondary" type="button" onclick="requestTableHelp('BILL')">🧾 Request Bill</button></div>
                 <button class="btn" onclick="resetAndGoHome()" style="margin-top: 2rem;">Order Again</button>
             </div>
         </div>
     </div>
 
     <!-- Floating Cart Icon -->
-    <div class="cart-icon" onclick="showPage('cart')">
+    <button type="button" class="cart-icon" onclick="showPage('cart')" aria-label="Open shopping cart">
         🛒
-        <span class="cart-count" id="cartCount">0</span>
-    </div>
+        <span class="cart-count" id="cartCount" aria-live="polite">0</span>
+    </button>
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js"></script>
     <footer>
         <p>&copy; 2026 Royal Rasoi. All rights reserved.</p>
         <p>123 Indian Street, Food City, FC 12345 | (+91) xxxxx xxxxx</p>
+        <p><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="refund-policy.html">Cancellations &amp; Refunds</a></p>
     </footer>
 
     <script>
@@ -698,7 +707,225 @@
             }
         }
 
+        const query = new URLSearchParams(window.location.search);
+        const TENANT_ID = query.get('tenant') || 'royal-rasoi';
+        const LOCATION_ID = query.get('location') || 'main';
+        const TABLE_ID = query.get('table') || '';
+        const ORDER_TYPE = TABLE_ID ? 'DINE_IN' : 'DELIVERY';
+        const SESSION_STORAGE_KEY = `restroflow:${TENANT_ID}:${LOCATION_ID}:table:${TABLE_ID}:session`;
+        const CART_STORAGE_KEY = `restroflow:${TENANT_ID}:${LOCATION_ID}:cart`;
+        let orderStatusTimer = null;
+        let currentOrder = null;
+        const MENU_PRICES = {
+            'Paneer Tikka': 250,
+            'Chicken Malai Kebab': 480,
+            'Tandoori Prawns': 530,
+            'Royal Samosa Platter': 120,
+            'Butter Chicken': 420,
+            'Kashmiri Rogan Josh': 200,
+            'Shahi Paneer Makhani': 345,
+            'Dal Makhani': 215,
+            'Chicken Korma': 320,
+            'Goan Prawn Curry': 700,
+            'Tiramisu': 119,
+            'Panna Cotta': 150
+        };
         let cart = [];
+
+        function loadCart() {
+            try {
+                const savedCart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || localStorage.getItem('royalRasoiCart') || '[]');
+                const menu = loadTenantMenu();
+                return Array.isArray(savedCart) ? savedCart.filter(item =>
+                    item && menu.some(menuItem => menuItem.name === item.name && menuItem.price === item.price) &&
+                    Number.isInteger(item.quantity) && item.quantity > 0
+                ) : [];
+            } catch (error) {
+                console.warn('Unable to restore the saved cart.', error);
+                return [];
+            }
+        }
+
+        function saveCart() {
+            try {
+                localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+            } catch (error) {
+                console.warn('Unable to save the cart.', error);
+            }
+        }
+
+        function saveLastOrder(order) {
+            try {
+                localStorage.setItem(`restroflow:${TENANT_ID}:${LOCATION_ID}:lastOrder`, JSON.stringify(order));
+            } catch (error) {
+                console.warn('Unable to save the last order locally.', error);
+            }
+        }
+
+        function saveMerchantOrder(orderId, order) {
+            try {
+                const orderKey = `restroflow:${TENANT_ID}:${LOCATION_ID}:orders`;
+                const orders = JSON.parse(localStorage.getItem(orderKey) || '[]');
+                if (orders.some(existingOrder => existingOrder.id === orderId)) return;
+                const total = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+                const deliveryFee = order.orderType === 'DINE_IN' ? 0 : 50;
+                orders.push({
+                    id: orderId,
+                    customer: `${order.user.firstName} ${order.user.lastName}`.trim(),
+                    items: order.items.map(item => `${item.name} × ${item.quantity}`).join(', '),
+                    total: total + (total * 0.08) + deliveryFee,
+                    status: 'New',
+                    createdAt: new Date().toLocaleString()
+                });
+                localStorage.setItem(orderKey, JSON.stringify(orders));
+            } catch (error) {
+                console.warn('Unable to sync the order to the merchant dashboard.', error);
+            }
+        }
+
+        function escapeHtml(value) {
+            return String(value).replace(/[&<>'"]/g, character => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                "'": '&#39;',
+                '"': '&quot;'
+            }[character]));
+        }
+
+        const MENU_CATEGORIES = {
+            'Paneer Tikka': 'Royal Starters',
+            'Chicken Malai Kebab': 'Royal Starters',
+            'Tandoori Prawns': 'Royal Starters',
+            'Royal Samosa Platter': 'Royal Starters',
+            'Butter Chicken': 'Curry Delights',
+            'Kashmiri Rogan Josh': 'Curry Delights',
+            'Shahi Paneer Makhani': 'Curry Delights',
+            'Dal Makhani': 'Curry Delights',
+            'Chicken Korma': 'Curry Delights',
+            'Goan Prawn Curry': 'Curry Delights',
+            'Tiramisu': 'Desserts',
+            'Panna Cotta': 'Desserts'
+        };
+
+        function loadTenantSettings() {
+            try {
+                return JSON.parse(localStorage.getItem(`restroflow:${TENANT_ID}:${LOCATION_ID}:settings`) || 'null') || {
+                    name: 'Royal Rasoi',
+                    slug: TENANT_ID,
+                    phone: '+91 00000 00000',
+                    mode: 'Delivery and pickup'
+                };
+            } catch (error) {
+                return { name: 'Royal Rasoi', slug: TENANT_ID, phone: '', mode: 'Delivery and pickup' };
+            }
+        }
+
+        function loadTenantMenu() {
+            const fallback = Object.entries(MENU_PRICES).map(([name, price], index) => ({
+                id: `item-${index + 1}`,
+                name,
+                price,
+                category: MENU_CATEGORIES[name] || 'Signature dishes',
+                available: true
+            }));
+
+            try {
+                const savedMenu = JSON.parse(localStorage.getItem(`restroflow:${TENANT_ID}:${LOCATION_ID}:menu`) || 'null');
+                if (!Array.isArray(savedMenu)) return fallback;
+                return savedMenu.filter(item => item && typeof item.name === 'string' && item.name.trim() &&
+                    Number.isFinite(Number(item.price)) && Number(item.price) > 0 && typeof item.category === 'string' &&
+                    item.available !== false).map(item => ({ ...item, price: Number(item.price) }));
+            } catch (error) {
+                return fallback;
+            }
+        }
+
+        function renderTenantMenu() {
+            const menuContainer = document.querySelector('#menu .container');
+            if (!menuContainer) return;
+            menuContainer.querySelectorAll(':scope > h3, :scope > .menu-grid').forEach(element => element.remove());
+
+            const menu = loadTenantMenu();
+            const catalog = document.createElement('div');
+            catalog.id = 'menuCatalog';
+
+            if (menu.length === 0) {
+                catalog.innerHTML = '<div class="empty-cart"><p>Menu temporarily unavailable</p><p style="font-size:1rem;color:#68736b;">Please check back soon.</p></div>';
+                menuContainer.appendChild(catalog);
+                return;
+            }
+
+            const grouped = menu.reduce((groups, item) => {
+                (groups[item.category] ||= []).push(item);
+                return groups;
+            }, {});
+
+            Object.entries(grouped).forEach(([category, items]) => {
+                const heading = document.createElement('h3');
+                heading.textContent = category;
+                heading.style.cssText = 'color:#667a62;margin:3rem 0 1.25rem;font-family:Playfair Display,Georgia,serif;font-size:clamp(1.65rem,3vw,2.25rem);';
+                catalog.appendChild(heading);
+
+                const grid = document.createElement('div');
+                grid.className = 'menu-grid';
+                items.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'menu-item';
+                    card.innerHTML = `
+                        <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=500&fit=crop" alt="${escapeHtml(item.name)}" class="dish-image">
+                        <h3>${escapeHtml(item.name)}</h3>
+                        <span class="price">₹${item.price.toFixed(2)}</span>
+                        <p>${escapeHtml(item.description || 'Prepared fresh with carefully selected ingredients.')}</p>
+                        <button class="btn" type="button" data-menu-id="${escapeHtml(item.id)}" data-menu-name="${escapeHtml(item.name)}" data-menu-price="${item.price}">Add to Cart</button>
+                    `;
+                    grid.appendChild(card);
+                });
+                catalog.appendChild(grid);
+            });
+
+            menuContainer.appendChild(catalog);
+            catalog.querySelectorAll('[data-menu-name]').forEach(button => button.addEventListener('click', event => {
+                addToCart(event, button.dataset.menuName, Number(button.dataset.menuPrice), button.dataset.menuId);
+            }));
+        }
+
+        function isValidCartItem(item) {
+            return loadTenantMenu().some(menuItem => menuItem.name === item.name && menuItem.price === item.price);
+        }
+
+        function applyTenantSettings() {
+            const settings = loadTenantSettings();
+            document.title = `${settings.name} | Online Ordering`;
+            const restaurantHeading = document.querySelector('header h1');
+            if (restaurantHeading) restaurantHeading.textContent = settings.name;
+            const phoneLine = document.querySelector('footer p:last-child');
+            if (phoneLine && settings.phone) phoneLine.textContent = `Contact: ${settings.phone}`;
+            const context = document.getElementById('orderingContext');
+            if (context) context.textContent = TABLE_ID ? `Order at restaurant · Table ${TABLE_ID}` : 'Order for delivery';
+            const tableNotice = document.getElementById('tableNotice');
+            if (tableNotice && TABLE_ID) { tableNotice.hidden = false; document.getElementById('checkoutTableName').textContent = `Table ${TABLE_ID}`; }
+            document.querySelectorAll('.delivery-only-field').forEach(field => { field.hidden = Boolean(TABLE_ID); field.querySelectorAll('input,textarea').forEach(input => { input.required = !TABLE_ID; }); });
+            const heading = document.getElementById('customerInfoHeading');
+            if (heading && TABLE_ID) heading.textContent = 'Guest Information';
+            const payment = document.getElementById('paymentType');
+            if (payment && TABLE_ID) payment.options[1].textContent = 'Cash at table';
+        }
+
+        function subscribeToTenantFromFirestore() {
+            if (!db) return;
+            const locationRef = db.collection('tenants').doc(TENANT_ID).collection('locations').doc(LOCATION_ID);
+            locationRef.onSnapshot(snapshot => {
+                if (!snapshot.exists) return;
+                localStorage.setItem(`restroflow:${TENANT_ID}:${LOCATION_ID}:settings`, JSON.stringify(snapshot.data()));
+                applyTenantSettings();
+            }, error => console.warn('Live restaurant settings unavailable; using the local fallback.', error));
+            locationRef.collection('menu').where('available', '==', true).onSnapshot(snapshot => {
+                const menu = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                localStorage.setItem(`restroflow:${TENANT_ID}:${LOCATION_ID}:menu`, JSON.stringify(menu));
+                renderTenantMenu();
+            }, error => console.warn('Live menu unavailable; using the local fallback.', error));
+        }
 
         function showPage(pageName) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -707,21 +934,40 @@
             if (pageName === 'cart') {
                 updateCartDisplay();
             } else if (pageName === 'checkout') {
+                if (cart.length === 0) {
+                    showPage('cart');
+                    return;
+                }
                 updateCheckoutSummary();
             }
             
             window.scrollTo(0, 0);
         }
 
-        function addToCart(event, name, price) {
+        function startOrderStatusTracking(orderId, phone) {
+            window.clearInterval(orderStatusTimer);
+            const statusElement = document.getElementById('orderStatus');
+            if (!statusElement || !db || typeof firebase.functions !== 'function') return;
+            const checkStatus = () => firebase.app().functions('asia-south1').httpsCallable('getOrderStatus')({
+                tenantId: TENANT_ID, locationId: LOCATION_ID, orderId, phone
+            }).then(result => {
+                statusElement.textContent = `Status: ${result.data.status}`;
+                if (['Completed', 'Rejected'].includes(result.data.status)) window.clearInterval(orderStatusTimer);
+            }).catch(() => {});
+            checkStatus();
+            orderStatusTimer = window.setInterval(checkStatus, 10000);
+        }
+
+        function addToCart(event, name, price, id = '') {
             const existingItem = cart.find(item => item.name === name);
             
             if (existingItem) {
                 existingItem.quantity += 1;
             } else {
-                cart.push({ name, price, quantity: 1 });
+                cart.push({ id, name, price, quantity: 1 });
             }
             
+            saveCart();
             updateCartCount();
             
             const btn = event.currentTarget;
@@ -729,7 +975,7 @@
             btn.style.background = '#2ecc71';
             setTimeout(() => {
                 btn.textContent = 'Add to Cart';
-                btn.style.background = '#f4a261';
+                btn.style.background = '';
             }, 1000);
         }
 
@@ -745,12 +991,14 @@
                 cart.splice(index, 1);
             }
             
+            saveCart();
             updateCartDisplay();
             updateCartCount();
         }
 
         function removeItem(index) {
             cart.splice(index, 1);
+            saveCart();
             updateCartDisplay();
             updateCartCount();
         }
@@ -782,15 +1030,15 @@
                 html += `
                     <div class="cart-item">
                         <div class="cart-item-info">
-                            <h4>${item.name}</h4>
+                            <h4>${escapeHtml(item.name)}</h4>
                             <p>₹${item.price.toFixed(2)} each</p>
                         </div>
                         <div class="cart-item-controls">
-                            <button class="qty-btn" onclick="updateQuantity(${index}, -1)">-</button>
-                            <span style="color: #f4a261; font-size: 1.2rem; font-weight: bold;">${item.quantity}</span>
-                            <button class="qty-btn" onclick="updateQuantity(${index}, 1)">+</button>
+                            <button type="button" class="qty-btn" aria-label="Decrease ${escapeHtml(item.name)} quantity" onclick="updateQuantity(${index}, -1)">-</button>
+                            <span aria-label="Quantity: ${item.quantity}" style="color: #f4a261; font-size: 1.2rem; font-weight: bold;">${item.quantity}</span>
+                            <button type="button" class="qty-btn" aria-label="Increase ${escapeHtml(item.name)} quantity" onclick="updateQuantity(${index}, 1)">+</button>
                             <span style="color: #fff; margin: 0 1rem;">₹${itemTotal.toFixed(2)}</span>
-                            <button class="remove-btn" onclick="removeItem(${index})">Remove</button>
+                            <button type="button" class="remove-btn" aria-label="Remove ${escapeHtml(item.name)} from cart" onclick="removeItem(${index})">Remove</button>
                         </div>
                     </div>
                 `;
@@ -799,7 +1047,7 @@
             html += '</div>';
             
             const tax = total * 0.08;
-            const deliveryFee = 50;
+            const deliveryFee = ORDER_TYPE === 'DINE_IN' ? 0 : 50;
             const finalTotal = total + tax + deliveryFee;
             
             html += `
@@ -814,7 +1062,7 @@
                             <span>₹${tax.toFixed(2)}</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
-                            <span>Delivery Fee:</span>
+                            <span>${ORDER_TYPE === 'DINE_IN' ? 'Service Fee' : 'Delivery Fee'}:</span>
                             <span>₹${deliveryFee.toFixed(2)}</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; border-top: 2px solid #f4a261; padding-top: 1rem;">
@@ -839,14 +1087,14 @@
                 total += itemTotal;
                 html += `
                     <div class="summary-item">
-                        <span>${item.name} x${item.quantity}</span>
+                        <span>${escapeHtml(item.name)} x${item.quantity}</span>
                         <span>₹${itemTotal.toFixed(2)}</span>
                     </div>
                 `;
             });
             
             const tax = total * 0.08;
-            const deliveryFee = 50;
+            const deliveryFee = ORDER_TYPE === 'DINE_IN' ? 0 : 50;
             const finalTotal = total + tax + deliveryFee;
             
             html += `
@@ -859,7 +1107,7 @@
                     <span>₹${tax.toFixed(2)}</span>
                 </div>
                 <div class="summary-item">
-                    <span>Delivery Fee</span>
+                    <span>${ORDER_TYPE === 'DINE_IN' ? 'Service Fee' : 'Delivery Fee'}</span>
                     <span>₹${deliveryFee.toFixed(2)}</span>
                 </div>
                 <div class="summary-item" style="border-top: 2px solid #f4a261; padding-top: 1rem; margin-top: 1rem; font-size: 1.3rem; font-weight: bold; color: #f4a261;">
@@ -873,6 +1121,12 @@
 
         function placeOrder(event) {
             event.preventDefault();
+
+            if (cart.length === 0) {
+                alert('Your cart is empty. Please add an item before placing an order.');
+                showPage('menu');
+                return;
+            }
 
             // Get form data
             const form = event.target;
@@ -889,8 +1143,26 @@
                 paymentType: formData.get('paymentType')
             };
 
+            if (userInfo.paymentType !== 'cash') {
+                alert('Card payment is not available yet. Please select Cash on Delivery.');
+                return;
+            }
+
+            if (!cart.every(isValidCartItem)) {
+                alert('Your cart contains an invalid item or price. Please return to the menu and add the items again.');
+                cart = [];
+                saveCart();
+                updateCartCount();
+                showPage('menu');
+                return;
+            }
+
             // Prepare order data
             const orderData = {
+                tenantId: TENANT_ID,
+                orderType: ORDER_TYPE,
+                tableId: TABLE_ID || null,
+                sessionId: localStorage.getItem(SESSION_STORAGE_KEY) || null,
                 user: userInfo,
                 items: cart,
                 createdAt: db && firebase.firestore.FieldValue
@@ -898,34 +1170,90 @@
                     : new Date().toISOString()
             };
 
-            const showConfirmation = (orderId) => {
+            const showConfirmation = (orderId, sessionId = null) => {
+                currentOrder = { orderId, phone: orderData.user.phone };
+                if (ORDER_TYPE === 'DINE_IN' && sessionId) { orderData.sessionId = sessionId; localStorage.setItem(SESSION_STORAGE_KEY, sessionId); }
+                saveMerchantOrder(orderId, orderData);
                 document.getElementById('orderNumber').textContent = `Order #${orderId}`;
+                const confirmationTable = document.getElementById('confirmationTable');
+                if (confirmationTable && TABLE_ID) { confirmationTable.hidden = false; confirmationTable.textContent = `Table ${TABLE_ID}`; }
+                const dineInActions = document.getElementById('dineInActions');
+                if (dineInActions) dineInActions.hidden = ORDER_TYPE !== 'DINE_IN';
+                startOrderStatusTracking(orderId, orderData.user.phone);
                 showPage('confirmation');
             };
 
-            if (!db) {
+            const saveLocalFallback = () => {
                 const localOrderId = `RR-${Date.now().toString().slice(-8)}`;
-                localStorage.setItem('royalRasoiLastOrder', JSON.stringify({ ...orderData, orderId: localOrderId }));
+                saveLastOrder({ ...orderData, orderId: localOrderId });
                 showConfirmation(localOrderId);
+            };
+
+            if (db && typeof firebase.functions === 'function') {
+                firebase.app().functions('asia-south1').httpsCallable('createOrder')({
+                    tenantId: TENANT_ID,
+                    locationId: LOCATION_ID,
+                    orderType: ORDER_TYPE,
+                    tableId: TABLE_ID || undefined,
+                    sessionId: orderData.sessionId || undefined,
+                    user: userInfo,
+                    items: cart.map(item => ({ id: item.id || '', name: item.name, quantity: item.quantity }))
+                }).then(result => showConfirmation(result.data.orderId, result.data.sessionId))
+                    .catch(error => {
+                        console.error('Secure order creation failed:', error);
+                        alert(error.message || 'Unable to place the order right now. Please check your connection and try again.');
+                    });
                 return;
             }
 
-            db.collection('orders').add(orderData)
-                .then((docRef) => showConfirmation(docRef.id))
-                .catch((error) => {
-                    console.error('Error adding document:', error);
-                    const localOrderId = `RR-${Date.now().toString().slice(-8)}`;
-                    showConfirmation(localOrderId);
-                });
+            saveLocalFallback();
+        }
+
+        function cancelCurrentOrder() {
+            if (!currentOrder || !db || typeof firebase.functions !== 'function') return;
+            const button = document.getElementById('cancelOrderButton');
+            button.disabled = true;
+            firebase.app().functions('asia-south1').httpsCallable('cancelOrder')({ tenantId: TENANT_ID, locationId: LOCATION_ID, orderId: currentOrder.orderId, phone: currentOrder.phone, reason: 'Customer requested cancellation' }).then(() => {
+                document.getElementById('orderStatus').textContent = 'Status: Rejected (cancelled)';
+                button.remove();
+                window.clearInterval(orderStatusTimer);
+            }).catch(error => {
+                button.disabled = false;
+                alert(error.message || 'This order can no longer be cancelled.');
+            });
+        }
+
+        function requestTableHelp(type) {
+            const sessionId = localStorage.getItem(SESSION_STORAGE_KEY);
+            if (ORDER_TYPE !== 'DINE_IN' || !sessionId || !db || typeof firebase.functions !== 'function') return;
+            firebase.app().functions('asia-south1').httpsCallable('createTableRequest')({ tenantId: TENANT_ID, locationId: LOCATION_ID, sessionId, type }).then(result => {
+                alert(type === 'BILL' ? 'Bill requested.' : 'A waiter has been notified.');
+                if (type === 'BILL') document.getElementById('orderStatus').textContent = 'Status: BILL_REQUESTED';
+            }).catch(error => alert(error.message || 'Unable to send the request.'));
         }
 
         function resetAndGoHome() {
+            window.clearInterval(orderStatusTimer);
+            currentOrder = null;
             cart = [];
+            saveCart();
             updateCartCount();
             showPage('menu');
         }
 
+        cart = loadCart();
         updateCartCount();
+        applyTenantSettings();
+        renderTenantMenu();
+        subscribeToTenantFromFirestore();
+
+        const fallbackDishImage = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500"%3E%3Crect width="800" height="500" fill="%23e7eee2"/%3E%3Ctext x="400" y="250" fill="%23667a62" font-family="Georgia,serif" font-size="34" text-anchor="middle"%3ERoyal Rasoi%3C/text%3E%3C/svg%3E';
+        document.querySelectorAll('.dish-image').forEach(image => {
+            image.addEventListener('error', () => {
+                image.onerror = null;
+                image.src = fallbackDishImage;
+            });
+        });
 
         function getLocation(event) {
             if (navigator.geolocation) {

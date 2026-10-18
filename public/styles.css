@@ -137,11 +137,13 @@ nav a:hover { background: #f3e7d5; color: var(--saffron-dark); }
 .btn-secondary:hover { color: white; }
 
 .cart-icon {
+    appearance: none;
     background: var(--ink);
     border: 3px solid var(--cream);
     bottom: 24px;
     box-shadow: 0 10px 30px rgba(23,33,27,.28);
     font-size: 1.35rem;
+    font-family: inherit;
     height: 62px;
     right: 24px;
     width: 62px;
