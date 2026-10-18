@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merchant Dashboard | RestroFlow</title>
+    <style>
+        :root { --ink:#17211b; --muted:#68736b; --cream:#fbf7ef; --paper:#fffdf8; --saffron:#d97732; --sage:#667a62; --line:rgba(23,33,27,.12); --danger:#b24f38; }
+        * { box-sizing:border-box; }
+        body { margin:0; background:var(--cream); color:var(--ink); font-family:Arial, sans-serif; }
+        button, input, select { font:inherit; }
+        button { cursor:pointer; }
+        .shell { display:grid; grid-template-columns:250px 1fr; min-height:100vh; }
+        aside { background:var(--ink); color:white; padding:28px 20px; }
+        .brand { font-family:Georgia,serif; font-size:1.7rem; margin:0 0 6px; }
+        .eyebrow { color:#f2b275; font-size:.72rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; }
+        .tenant-card { border:1px solid rgba(255,255,255,.18); border-radius:14px; margin:28px 0; padding:16px; }
+        .tenant-card strong { display:block; margin-bottom:4px; }
+        .tenant-card span { color:rgba(255,255,255,.65); font-size:.82rem; }
+        nav { display:grid; gap:8px; }
+        nav button { background:transparent; border:0; border-radius:10px; color:rgba(255,255,255,.72); padding:12px 14px; text-align:left; }
+        nav button:hover, nav button.active { background:#2a372e; color:white; }
+        .back-link { color:#f2b275; display:block; font-size:.85rem; margin-top:30px; text-decoration:none; }
+        main { padding:34px clamp(20px, 4vw, 58px); }
+        .topbar { align-items:flex-start; display:flex; gap:20px; justify-content:space-between; margin-bottom:30px; }
+        h1, h2, h3 { font-family:Georgia,serif; margin-top:0; }
+        h1 { font-size:clamp(2rem,4vw,3.3rem); margin-bottom:8px; }
+        .muted { color:var(--muted); }
+        .btn { background:var(--saffron); border:0; border-radius:9px; color:white; font-weight:700; padding:11px 16px; }
+        .btn.secondary { background:transparent; border:1px solid var(--saffron); color:var(--saffron); }
+        .btn.danger { background:transparent; border:1px solid #d68a78; color:var(--danger); }
+        .view { display:none; }
+        .view.active { display:block; }
+        .cards { display:grid; gap:16px; grid-template-columns:repeat(4, minmax(0,1fr)); margin-bottom:26px; }
+        .card, .panel { background:rgba(255,253,248,.88); border:1px solid var(--line); border-radius:16px; box-shadow:0 12px 35px rgba(54,41,23,.07); padding:20px; }
+        .metric { color:var(--muted); font-size:.82rem; }
+        .metric strong { color:var(--ink); display:block; font-family:Georgia,serif; font-size:2rem; margin-top:8px; }
+        .panel-header { align-items:center; display:flex; gap:12px; justify-content:space-between; margin-bottom:16px; }
+        .panel-header h2 { margin:0; }
+        table { border-collapse:collapse; width:100%; }
+        th, td { border-bottom:1px solid var(--line); padding:13px 8px; text-align:left; vertical-align:middle; }
+        th { color:var(--muted); font-size:.75rem; letter-spacing:.08em; text-transform:uppercase; }
+        .status { border-radius:999px; display:inline-block; font-size:.75rem; font-weight:700; padding:5px 9px; }
+        .status.new { background:#f7ead8; color:#9b5b20; }
+        .status.accepted, .status.preparing { background:#e8efe5; color:#486048; }
+        .status.completed { background:#dcebe9; color:#2f6761; }
+        .status.rejected { background:#f6dfd9; color:var(--danger); }
+        .form-grid { display:grid; gap:14px; grid-template-columns:repeat(2,minmax(0,1fr)); }
+        label { color:var(--muted); display:grid; font-size:.84rem; gap:6px; }
+        input, select { background:white; border:1px solid var(--line); border-radius:8px; color:var(--ink); padding:11px; width:100%; }
+        .item-row { align-items:center; border-bottom:1px solid var(--line); display:grid; gap:12px; grid-template-columns:1fr 110px 130px 180px; padding:14px 0; }
+        .item-row:last-child { border-bottom:0; }
+        .item-name strong { display:block; }
+        .item-name span { color:var(--muted); font-size:.8rem; }
+        .empty { color:var(--muted); padding:28px 0; text-align:center; }
+        .notice { background:#fff3df; border:1px solid #ebc58c; border-radius:12px; color:#805520; margin-bottom:22px; padding:13px 16px; }
+        .auth-gate { align-items:center; background:linear-gradient(135deg,#17211b,#304238); display:flex; justify-content:center; min-height:100vh; padding:24px; }
+        .auth-card { background:var(--paper); border-radius:18px; box-shadow:0 24px 70px rgba(0,0,0,.22); max-width:440px; padding:34px; width:100%; }
+        .auth-card h1 { font-size:2.4rem; margin:8px 0; }
+        .auth-card .btn { margin-top:8px; width:100%; }
+        .auth-error { color:var(--danger); font-size:.88rem; margin-top:14px; min-height:20px; }
+        .session { align-items:center; display:flex; gap:12px; }
+        .session small { color:var(--muted); }
+        .session .btn { padding:8px 12px; }
+        [hidden] { display:none !important; }
+        @media (max-width:900px) { .shell { display:block; } aside { padding:20px; } nav { display:flex; overflow:auto; } nav button { white-space:nowrap; } .cards { grid-template-columns:repeat(2,1fr); } .item-row { grid-template-columns:1fr 100px; } .item-row > :nth-child(n+3) { grid-column:2; } }
+        @media (max-width:600px) { .topbar { display:block; } .topbar .btn { margin-top:14px; } .cards { grid-template-columns:1fr 1fr; } .form-grid { grid-template-columns:1fr; } table { font-size:.82rem; min-width:650px; } .panel { overflow:auto; } }
+    </style>
+</head>
+<body>
+    <section class="auth-gate" id="authGate">
+        <div class="auth-card">
+            <div class="eyebrow">RestroFlow merchant</div>
+            <h1>Sign in</h1>
+            <p class="muted">Use your restaurant account to access the merchant dashboard.</p>
+            <form id="loginForm">
+                <label for="loginEmail">Email<input id="loginEmail" type="email" autocomplete="email" required></label>
+                <label for="loginPassword" style="margin-top:14px">Password<input id="loginPassword" type="password" autocomplete="current-password" required></label>
+                <button class="btn" type="submit">Sign in</button>
+            </form>
+            <div class="auth-error" id="authError" role="alert"></div>
+            <p class="muted" style="font-size:.8rem;margin-bottom:0">Account creation and profile setup are completed by the platform administrator.</p>
+        </div>
+    </section>
+    <div class="shell" id="appShell" hidden>
+        <aside>
+            <div class="eyebrow">RestroFlow merchant</div>
+            <p class="brand">Control room</p>
+            <div class="tenant-card"><strong id="tenantName">Royal Rasoi</strong><span id="tenantSlug">royal-rasoi</span></div>
+            <nav aria-label="Dashboard sections">
+                <button class="active" data-view="overview">Overview</button>
+                <button data-view="orders">Orders</button>
+                <button data-view="menu">Menu</button>
+                <button data-view="settings">Settings</button>
+            </nav>
+            <a class="back-link" href="index.html">← Open customer site</a>
+            <a class="back-link" id="tablesLink" href="tables.html">Manage tables &amp; QR</a>
+            <a class="back-link" id="kitchenLink" href="kitchen.html">Open kitchen display</a>
+            <a class="back-link" id="requestsLink" href="requests.html">Table requests</a>
+            <a class="back-link" id="billingLink" href="billing.html">Session billing</a>
+            <a class="back-link" href="privacy.html">Privacy · Terms · Refunds</a>
+        </aside>
+        <main>
+            <div class="topbar">
+                <div><div class="eyebrow">Merchant dashboard</div><h1 id="pageTitle">Good morning</h1><p class="muted">Manage your restaurant operations from one place.</p></div>
+                <div class="session"><small id="currentUser"></small><button class="btn secondary" id="logoutButton" type="button">Sign out</button><button class="btn" id="newOrderButton" type="button">Create demo order</button></div>
+            </div>
+            <div class="notice">Cloud mode is active. Restaurant settings, menu, and orders are synchronized with your tenant-scoped Firestore location.</div>
+
+            <section class="view active" id="overview">
+                <div class="cards">
+                    <div class="card metric">Orders today<strong id="metricOrders">0</strong></div>
+                    <div class="card metric">Open orders<strong id="metricOpen">0</strong></div>
+                    <div class="card metric">Revenue today<strong id="metricRevenue">₹0</strong></div>
+                    <div class="card metric">Menu items<strong id="metricItems">0</strong></div>
+                </div>
+                <div class="panel"><div class="panel-header"><h2>Recent orders</h2><button class="btn secondary" data-jump="orders" type="button">View all</button></div><div id="recentOrders"></div></div>
+            </section>
+
+            <section class="view" id="orders"><div class="panel"><div class="panel-header"><h2>Orders</h2><button class="btn secondary" id="clearDemoOrders" type="button">Clear demo data</button></div><div id="ordersTable"></div></div></section>
+
+            <section class="view" id="menu"><div class="panel"><div class="panel-header"><h2>Menu management</h2><button class="btn" id="addItemButton" type="button">Add menu item</button></div><div id="menuItems"></div><form id="menuForm" hidden><div class="form-grid"><label>Item name<input id="itemName" required></label><label>Price<input id="itemPrice" type="number" min="1" required></label><label>Category<input id="itemCategory" value="Signature dishes" required></label><label>Availability<select id="itemAvailable"><option value="true">Available</option><option value="false">Unavailable</option></select></label></div><div style="margin-top:16px"><button class="btn" type="submit">Save item</button> <button class="btn secondary" id="cancelItem" type="button">Cancel</button></div></form></div></section>
+
+            <section class="view" id="settings"><div class="panel"><div class="panel-header"><h2>Restaurant settings</h2></div><form id="settingsForm"><div class="form-grid"><label>Restaurant name<input id="settingsName" required></label><label>Public slug<input id="settingsSlug" pattern="[a-z0-9\-]+" required></label><label>Phone<input id="settingsPhone" required></label><label>Order mode<select id="settingsMode"><option>Delivery and pickup</option><option>Pickup only</option><option>Delivery only</option></select></label><label>Tax rate (%)<input id="settingsTaxRate" type="number" min="0" max="100" step="0.01" required></label><label>Default delivery fee<input id="settingsDeliveryFee" type="number" min="0" step="1" required></label><label>Preparation time (minutes)<input id="settingsPrepTime" type="number" min="1" max="240" step="1" required></label><label style="align-items:center;display:flex;gap:8px;margin-top:24px"><input id="settingsClosedMode" type="checkbox" style="width:auto"> Closed mode</label></div><h3 style="margin:26px 0 10px">Business hours</h3><div id="businessHoursEditor"></div><h3 style="margin:26px 0 10px">Delivery zones</h3><p class="muted" style="font-size:.85rem">One zone per line: <code>Zone name | ZIP1, ZIP2 | fee</code></p><textarea id="deliveryZonesText" rows="5" style="border:1px solid var(--line);border-radius:8px;padding:11px;width:100%" placeholder="Nearby | 411001, 411005 | 40"></textarea><div style="margin-top:16px"><button class="btn" type="submit">Save settings</button></div></form></div></section>
+        </main>
+    </div>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js"></script>
+    <script>
+        const TENANT_ID = new URLSearchParams(location.search).get('tenant') || 'royal-rasoi';
+        const LOCATION_ID = new URLSearchParams(location.search).get('location') || 'main';
+        document.getElementById('tablesLink').href = `tables.html?tenant=${encodeURIComponent(TENANT_ID)}&location=${encodeURIComponent(LOCATION_ID)}`;
+        document.getElementById('kitchenLink').href = `kitchen.html?tenant=${encodeURIComponent(TENANT_ID)}&location=${encodeURIComponent(LOCATION_ID)}`;
+        document.getElementById('requestsLink').href = `requests.html?tenant=${encodeURIComponent(TENANT_ID)}&location=${encodeURIComponent(LOCATION_ID)}`;
+        document.getElementById('billingLink').href = `billing.html?tenant=${encodeURIComponent(TENANT_ID)}&location=${encodeURIComponent(LOCATION_ID)}`;
+        const keys = { settings: `restroflow:${TENANT_ID}:${LOCATION_ID}:settings`, menu: `restroflow:${TENANT_ID}:${LOCATION_ID}:menu`, orders: `restroflow:${TENANT_ID}:${LOCATION_ID}:orders` };
+        const defaultSettings = { name: 'Royal Rasoi', slug: 'royal-rasoi', phone: '+91 00000 00000', mode: 'Delivery and pickup' };
+        const defaultMenu = [
+            ['Paneer Tikka',250,'Royal Starters'],['Chicken Malai Kebab',480,'Royal Starters'],['Tandoori Prawns',530,'Royal Starters'],['Royal Samosa Platter',120,'Royal Starters'],['Butter Chicken',420,'Curry Delights'],['Kashmiri Rogan Josh',200,'Curry Delights'],['Shahi Paneer Makhani',345,'Curry Delights'],['Dal Makhani',215,'Curry Delights'],['Chicken Korma',320,'Curry Delights'],['Goan Prawn Curry',700,'Curry Delights'],['Tiramisu',119,'Desserts'],['Panna Cotta',150,'Desserts']
+        ].map(([name, price, category], index) => ({ id: `item-${index + 1}`, name, price, category, available: true }));
+        const read = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
+        const write = (key, value) => localStorage.setItem(key, JSON.stringify(value));
+        let settings = read(keys.settings, defaultSettings); let menu = read(keys.menu, defaultMenu); let orders = read(keys.orders, []); let editingId = null;
+        const money = value => `₹${Number(value || 0).toFixed(2)}`;
+        const esc = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        const statusClass = status => String(status).toLowerCase().replace(/\s+/g, '-');
+        const deliveryStatuses = ['New','Accepted','Preparing','Completed','Rejected'];
+        const dineInStatuses = ['ORDER_PLACED','ORDER_ACCEPTED','PREPARING','READY','SERVED','BILL_REQUESTED','PAID','COMPLETED','CANCELLED'];
+        const cloudTime = value => value && typeof value.toDate === 'function' ? value.toDate().toLocaleString() : (value || '');
+        const businessDays = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+        const defaultHours = Object.fromEntries(businessDays.map(day => [day, { open: '09:00', close: '22:00', closed: false }]));
+        function renderBusinessHours() {
+            const editor = document.getElementById('businessHoursEditor');
+            if (!editor) return;
+            editor.innerHTML = businessDays.map(day => { const value = settings.businessHours?.[day] || defaultHours[day]; return `<div class="form-grid" style="align-items:end;margin-bottom:8px"><label style="text-transform:capitalize">${day}<select data-hours-day="${day}" data-hours-closed><option value="false" ${value.closed ? '' : 'selected'}>Open</option><option value="true" ${value.closed ? 'selected' : ''}>Closed</option></select></label><label>Opens<input type="time" data-hours-day="${day}" data-hours-open value="${esc(value.open || '09:00')}"></label><label>Closes<input type="time" data-hours-day="${day}" data-hours-close value="${esc(value.close || '22:00')}"></label></div>`; }).join('');
+        }
+        function readBusinessHours() { return Object.fromEntries(businessDays.map(day => [day, { open: document.querySelector(`[data-hours-day="${day}"][data-hours-open]`).value, close: document.querySelector(`[data-hours-day="${day}"][data-hours-close]`).value, closed: document.querySelector(`[data-hours-day="${day}"][data-hours-closed]`).value === 'true' }])); }
+        function renderDeliveryZones() { document.getElementById('deliveryZonesText').value = (settings.deliveryZones || []).map(zone => `${zone.name || 'Zone'} | ${(zone.zipCodes || []).join(', ')} | ${Number(zone.fee || 0)}`).join('\n'); }
+        function readDeliveryZones() { return document.getElementById('deliveryZonesText').value.split('\n').map(line => line.split('|').map(value => value.trim())).filter(parts => parts.length === 3 && parts[0] && parts[1]).map(([name, zipCodes, fee]) => ({ name, zipCodes: zipCodes.split(',').map(value => value.trim()).filter(Boolean), fee: Math.max(0, Number(fee) || 0) })); }
+        const normalizeCloudOrder = (doc) => {
+            const data = typeof doc.data === 'function' ? doc.data() : doc;
+            const customer = data.customer || `${data.user?.firstName || ''} ${data.user?.lastName || ''}`.trim() || 'Guest';
+            const items = Array.isArray(data.items) ? data.items.map(item => `${item.name || 'Item'} × ${item.quantity || 1}`).join(', ') : (data.items || 'Order');
+            return { ...data, id: typeof doc.id === 'string' ? doc.id : data.id, customer, items, total: Number(data.total || 0), createdAt: cloudTime(data.createdAt) };
+        };
+        let cloudReady = false;
+        function locationRef() { return firestore.collection('tenants').doc(TENANT_ID).collection('locations').doc(LOCATION_ID); }
+        function saveAll() {
+            write(keys.settings, settings); write(keys.menu, menu); write(keys.orders, orders);
+            if (cloudReady) syncCloudData().catch(error => console.warn('Cloud sync failed:', error));
+        }
+        async function syncCloudData() {
+            if (!firestore || !cloudReady) return;
+            const ref = locationRef();
+            const batch = firestore.batch();
+            batch.set(ref, { ...settings, tenantId: TENANT_ID, locationId: LOCATION_ID, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+            const remoteMenu = await ref.collection('menu').get();
+            const localMenuIds = new Set(menu.map(item => item.id));
+            remoteMenu.forEach(doc => { if (!localMenuIds.has(doc.id)) batch.delete(doc.ref); });
+            menu.forEach(item => batch.set(ref.collection('menu').doc(item.id), { ...item, tenantId: TENANT_ID, locationId: LOCATION_ID }));
+            await batch.commit();
+            if (firebase.functions) {
+                await firebase.app().functions('asia-south1').httpsCallable('recordAuditEvent')({
+                    tenantId: TENANT_ID,
+                    locationId: LOCATION_ID,
+                    action: 'dashboard.synced'
+                });
+            }
+        }
+        async function loadCloudData() {
+            if (!firestore) return;
+            const ref = locationRef();
+            const [settingsSnapshot, menuSnapshot, ordersSnapshot] = await Promise.all([
+                ref.get(),
+                ref.collection('menu').get(),
+                ref.collection('orders').get()
+            ]);
+            if (settingsSnapshot.exists) settings = { ...settings, ...settingsSnapshot.data() };
+            if (!menuSnapshot.empty) menu = menuSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            if (!ordersSnapshot.empty) orders = ordersSnapshot.docs.map(normalizeCloudOrder);
+            cloudReady = true;
+            saveAll();
+            render();
+        }
+        function startCloudListeners() {
+            if (!firestore) return;
+            const ref = locationRef();
+            ref.onSnapshot(snapshot => {
+                if (!snapshot.exists) return;
+                settings = { ...settings, ...snapshot.data() };
+                write(keys.settings, settings);
+                render();
+            }, error => console.warn('Live settings updates unavailable:', error));
+            ref.collection('menu').onSnapshot(snapshot => {
+                menu = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                write(keys.menu, menu);
+                render();
+            }, error => console.warn('Live menu updates unavailable:', error));
+            ref.collection('orders').onSnapshot(snapshot => {
+                orders = snapshot.docs.map(normalizeCloudOrder);
+                write(keys.orders, orders);
+                render();
+            }, error => console.warn('Live order updates unavailable:', error));
+        }
+        function render() {
+            document.getElementById('tenantName').textContent = settings.name; document.getElementById('tenantSlug').textContent = `${settings.slug} / ${LOCATION_ID}`;
+            document.getElementById('metricOrders').textContent = orders.length; document.getElementById('metricOpen').textContent = orders.filter(o => !['Completed','Rejected'].includes(o.status)).length; document.getElementById('metricRevenue').textContent = money(orders.filter(o => o.status !== 'Rejected').reduce((sum,o) => sum + Number(o.total || 0), 0)); document.getElementById('metricItems').textContent = menu.filter(i => i.available).length;
+            renderOrders(); renderMenu();
+            document.getElementById('settingsName').value = settings.name; document.getElementById('settingsSlug').value = settings.slug; document.getElementById('settingsPhone').value = settings.phone; document.getElementById('settingsMode').value = settings.mode; document.getElementById('settingsTaxRate').value = Number(settings.taxRate ?? 0.08) * 100; document.getElementById('settingsDeliveryFee').value = Number(settings.deliveryFee ?? 50); document.getElementById('settingsPrepTime').value = Number(settings.prepTimeMinutes ?? 30); document.getElementById('settingsClosedMode').checked = settings.closedMode === true; renderBusinessHours(); renderDeliveryZones();
+        }
+        function orderMarkup(order) { return `<div style="align-items:center;border-bottom:1px solid var(--line);display:flex;gap:12px;justify-content:space-between;padding:13px 0"><span><strong>${esc(order.id)}</strong><br><small class="muted">${esc(order.orderType === 'DINE_IN' ? `Dine-in · Table ${order.tableNumber || order.tableId || '—'}` : 'Delivery')} · ${esc(order.customer || 'Guest')} · ${esc(order.items || 'Order')}</small></span><span class="status ${statusClass(order.status)}">${esc(order.status)}</span><strong>${money(order.total)}</strong></div>`; }
+        function renderOrders() {
+            const sorted = [...orders].reverse(); const recent = document.getElementById('recentOrders'); recent.innerHTML = sorted.slice(0,5).map(orderMarkup).join('') || '<div class="empty">No orders yet. Create a demo order to preview the workflow.</div>';
+            const table = document.getElementById('ordersTable');
+            table.innerHTML = sorted.length ? `<table><thead><tr><th>Order</th><th>Customer</th><th>Total</th><th>Status</th><th>Update</th></tr></thead><tbody>${sorted.map(order => { const statuses = order.orderType === 'DINE_IN' ? dineInStatuses : deliveryStatuses; return `<tr><td><strong>${esc(order.id)}</strong><br><small class="muted">${esc(order.orderType === 'DINE_IN' ? `Dine-in · Table ${order.tableNumber || order.tableId || '—'}` : 'Delivery')} · ${esc(order.createdAt || '')}</small></td><td>${esc(order.customer || 'Guest')}<br><small class="muted">${esc(order.items || '')}</small></td><td>${money(order.total)}</td><td><span class="status ${statusClass(order.status)}">${esc(order.status)}</span></td><td><select aria-label="Update ${esc(order.id)} status" data-order-status="${esc(order.id)}">${statuses.map(s => `<option ${s === order.status ? 'selected' : ''}>${s}</option>`).join('')}</select></td></tr>`; }).join('')}</tbody></table>` : '<div class="empty">No orders yet.</div>';
+            table.querySelectorAll('[data-order-status]').forEach(select => select.addEventListener('change', async event => {
+                const order = orders.find(item => item.id === event.target.dataset.orderStatus);
+                if (!order) return;
+                const previousStatus = order.status;
+                const nextStatus = event.target.value;
+                select.disabled = true;
+                try {
+                    if (typeof firebase.functions !== 'function') throw new Error('The order status service is unavailable. Refresh the page after deploying the latest dashboard.');
+                    await firebase.app().functions('asia-south1').httpsCallable('updateOrderStatus')({ tenantId: TENANT_ID, locationId: LOCATION_ID, orderId: order.id, status: nextStatus });
+                    order.status = nextStatus;
+                    write(keys.orders, orders);
+                    render();
+                } catch (error) {
+                    event.target.value = previousStatus;
+                    alert(error.message || 'Unable to update the order status.');
+                    select.disabled = false;
+                }
+            }));
+        }
+        function renderMenu() { document.getElementById('menuItems').innerHTML = menu.map(item => `<div class="item-row"><div class="item-name"><strong>${esc(item.name)}</strong><span>${esc(item.category)} · ${item.available ? 'Available' : 'Unavailable'}</span></div><strong>${money(item.price)}</strong><button class="btn secondary" type="button" data-toggle="${esc(item.id)}">${item.available ? 'Mark unavailable' : 'Make available'}</button><span><button class="btn secondary" type="button" data-edit="${esc(item.id)}">Edit</button> <button class="btn danger" type="button" data-delete="${esc(item.id)}">Delete</button></span></div>`).join('') || '<div class="empty">No menu items yet.</div>'; document.querySelectorAll('[data-toggle]').forEach(button => button.addEventListener('click', () => { const item = menu.find(i => i.id === button.dataset.toggle); item.available = !item.available; saveAll(); render(); })); document.querySelectorAll('[data-edit]').forEach(button => button.addEventListener('click', () => editItem(button.dataset.edit))); document.querySelectorAll('[data-delete]').forEach(button => button.addEventListener('click', () => { menu = menu.filter(i => i.id !== button.dataset.delete); saveAll(); render(); })); }
+        function editItem(id) { const item = menu.find(i => i.id === id); if (!item) return; editingId = id; document.getElementById('itemName').value = item.name; document.getElementById('itemPrice').value = item.price; document.getElementById('itemCategory').value = item.category; document.getElementById('itemAvailable').value = String(item.available); document.getElementById('menuForm').hidden = false; }
+        document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => { document.querySelectorAll('[data-view]').forEach(item => item.classList.remove('active')); button.classList.add('active'); document.querySelectorAll('.view').forEach(view => view.classList.toggle('active', view.id === button.dataset.view)); }));
+        document.querySelectorAll('[data-jump]').forEach(button => button.addEventListener('click', () => document.querySelector(`[data-view="${button.dataset.jump}"]`).click()));
+        document.getElementById('addItemButton').addEventListener('click', () => { editingId = null; document.getElementById('menuForm').reset(); document.getElementById('menuForm').hidden = false; });
+        document.getElementById('cancelItem').addEventListener('click', () => document.getElementById('menuForm').hidden = true);
+        document.getElementById('menuForm').addEventListener('submit', event => { event.preventDefault(); const item = { id: editingId || `item-${Date.now()}`, name: document.getElementById('itemName').value.trim(), price: Number(document.getElementById('itemPrice').value), category: document.getElementById('itemCategory').value.trim(), available: document.getElementById('itemAvailable').value === 'true' }; if (!item.name || !item.category || !Number.isFinite(item.price) || item.price <= 0) return; const index = menu.findIndex(existing => existing.id === editingId); if (index >= 0) menu[index] = item; else menu.push(item); saveAll(); document.getElementById('menuForm').hidden = true; render(); });
+        document.getElementById('settingsForm').addEventListener('submit', event => { event.preventDefault(); settings = { ...settings, name: document.getElementById('settingsName').value.trim(), slug: document.getElementById('settingsSlug').value.trim().toLowerCase(), phone: document.getElementById('settingsPhone').value.trim(), mode: document.getElementById('settingsMode').value, taxRate: Number(document.getElementById('settingsTaxRate').value) / 100, deliveryFee: Number(document.getElementById('settingsDeliveryFee').value), prepTimeMinutes: Number(document.getElementById('settingsPrepTime').value), closedMode: document.getElementById('settingsClosedMode').checked, businessHours: readBusinessHours(), deliveryZones: readDeliveryZones() }; saveAll(); render(); });
+        document.getElementById('newOrderButton').addEventListener('click', () => { orders.push({ id: `RR-${Date.now().toString().slice(-6)}`, customer: 'Demo customer', items: 'Paneer Tikka × 2', total: 540, status: 'New', createdAt: new Date().toLocaleString() }); saveAll(); render(); });
+        document.getElementById('clearDemoOrders').addEventListener('click', () => { orders = []; saveAll(); render(); });
+        render();
+    </script>
+    <script>
+        const firebaseConfig = {
+            apiKey: 'AIzaSyAEkWv-q6YdZ2PqVmJternGsb3esoPSRFk',
+            authDomain: 'restro-6bf9c.firebaseapp.com',
+            projectId: 'restro-6bf9c',
+            storageBucket: 'restro-6bf9c.firebasestorage.app',
+            messagingSenderId: '985955315480',
+            appId: '1:985955315480:web:0d5dc1567a89201a6cf86d'
+        };
+        const authGate = document.getElementById('authGate');
+        const appShell = document.getElementById('appShell');
+        const authError = document.getElementById('authError');
+        let auth = null;
+        let firestore = null;
+
+        function showAuthError(message) {
+            authError.textContent = message;
+        }
+
+        function showSignedOutState(message = '') {
+            appShell.hidden = true;
+            authGate.hidden = false;
+            showAuthError(message);
+        }
+
+        try {
+            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+            auth = firebase.auth();
+            firestore = firebase.firestore();
+        } catch (error) {
+            showAuthError('Authentication is unavailable. Check the Firebase configuration and network connection.');
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async event => {
+            event.preventDefault();
+            if (!auth) return showAuthError('Authentication is not configured yet.');
+            showAuthError('Signing in…');
+            try {
+                await auth.signInWithEmailAndPassword(
+                    document.getElementById('loginEmail').value.trim(),
+                    document.getElementById('loginPassword').value
+                );
+            } catch (error) {
+                showAuthError(error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' ? 'Email or password is incorrect.' : error.message);
+            }
+        });
+
+        document.getElementById('logoutButton').addEventListener('click', () => auth?.signOut());
+
+        auth?.onAuthStateChanged(async user => {
+            if (!user) return showSignedOutState();
+            try {
+                const profileSnapshot = await firestore.collection('users').doc(user.uid).get();
+                if (!profileSnapshot.exists) throw new Error('Your account has no merchant profile yet. Ask the platform administrator to create users/' + user.uid + '.');
+                const profile = profileSnapshot.data();
+                const allowedRoles = ['owner', 'manager', 'staff', 'receptionist', 'kitchen', 'kitchen_staff', 'waiter', 'platform_admin'];
+                if (!allowedRoles.includes(profile.role)) throw new Error('Your account does not have a merchant dashboard role.');
+                if (profile.role !== 'platform_admin' && profile.tenantId !== TENANT_ID) throw new Error(`This account is not assigned to the “${TENANT_ID}” restaurant.`);
+                document.getElementById('currentUser').textContent = user.email || user.uid;
+                authGate.hidden = true;
+                appShell.hidden = false;
+                await loadCloudData();
+                startCloudListeners();
+                showAuthError('');
+            } catch (error) {
+                await auth.signOut();
+                showSignedOutState(error.message || 'Unable to load your merchant profile.');
+            }
+        });
+    </script>
+</body>
+</html>
