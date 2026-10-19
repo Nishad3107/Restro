@@ -131,6 +131,30 @@ async function requireTenantMember(request, tenantId, roles) {
   return profile;
 }
 
+async function settleDiningSessionIfPaid(tenantId, locationId, sessionId) {
+  if (!sessionId) return false;
+  const location = locationRef(tenantId, locationId);
+  const sessionRef = location.collection('diningSessions').doc(sessionId);
+  const sessionSnapshot = await sessionRef.get();
+  if (!sessionSnapshot.exists) return false;
+  const session = sessionSnapshot.data() || {};
+  const ordersSnapshot = await location.collection('orders').where('sessionId', '==', sessionId).get();
+  const orders = ordersSnapshot.docs.map(doc => doc.data());
+  const settled = orders.length > 0 && orders.every(order => ['PAID', 'COMPLETED', 'CANCELLED'].includes(order.status));
+  if (!settled) return false;
+
+  const now = admin.firestore.FieldValue.serverTimestamp();
+  await sessionRef.set({ status: 'COMPLETED', paymentStatus: 'PAID', completedAt: now, updatedAt: now }, { merge: true });
+  if (session.tableId) await tableRef(tenantId, locationId, session.tableId).set({ status: 'AVAILABLE', activeSessionId: null, updatedAt: now }, { merge: true });
+  const billsSnapshot = await location.collection('bills').where('sessionId', '==', sessionId).get();
+  if (!billsSnapshot.empty) {
+    const batch = db.batch();
+    billsSnapshot.docs.forEach(doc => batch.set(doc.ref, { paymentStatus: 'PAID', paidAt: now, updatedAt: now }, { merge: true }));
+    await batch.commit();
+  }
+  return true;
+}
+
 exports.createOrder = onCall(async request => {
   const data = request.data || {};
   const tenantId = cleanText(data.tenantId, 80);
@@ -225,12 +249,12 @@ exports.updateOrderStatus = onCall(async request => {
   const order = snapshot.data();
   if (order.orderType === 'DINE_IN' && !dineInStatuses.includes(status)) throw new HttpsError('invalid-argument', 'Invalid dine-in order status.');
   await orderRef.update({ status, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
-  if (order.orderType === 'DINE_IN' && order.sessionId && status === 'COMPLETED') {
+  if (order.orderType === 'DINE_IN' && order.sessionId && ['PAID', 'COMPLETED'].includes(status)) {
     const sessionOrders = await locationRef(tenantId, locationId).collection('orders').where('sessionId', '==', order.sessionId).get();
-    if (sessionOrders.docs.every(doc => ['COMPLETED', 'CANCELLED'].includes(doc.data().status))) {
-      await locationRef(tenantId, locationId).collection('diningSessions').doc(order.sessionId).set({ status: 'COMPLETED', completedAt: admin.firestore.FieldValue.serverTimestamp(), updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
-      if (order.tableId) await tableRef(tenantId, locationId, order.tableId).set({ status: 'AVAILABLE', activeSessionId: null, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
-    }
+    if (status === 'COMPLETED' && sessionOrders.docs.some(doc => !['PAID', 'COMPLETED', 'CANCELLED'].includes(doc.data().status))) return { orderId, status, sessionSettled: false };
+    const sessionSettled = await settleDiningSessionIfPaid(tenantId, locationId, order.sessionId);
+    await writeAuditLog(tenantId, locationId, 'order.session_settlement_checked', request.auth, { orderId, status, sessionSettled });
+    return { orderId, status, sessionSettled };
   }
   await writeAuditLog(tenantId, locationId, 'order.status_updated', request.auth, { orderId, status });
   return { orderId, status };
@@ -337,6 +361,7 @@ exports.cancelOrder = onCall(async request => {
   const cancelledStatus = order.orderType === 'DINE_IN' ? 'CANCELLED' : 'Rejected';
   await ref.update({ status: cancelledStatus, cancellationReason: cleanText(data.reason, 300) || 'Cancelled', cancelledAt: admin.firestore.FieldValue.serverTimestamp(), updatedAt: admin.firestore.FieldValue.serverTimestamp() });
   const refundRequired = order.user?.paymentType !== 'cash';
+  if (order.orderType === 'DINE_IN' && order.sessionId) await settleDiningSessionIfPaid(tenantId, locationId, order.sessionId);
   await writeAuditLog(tenantId, locationId, 'order.cancelled', request.auth, { orderId, refundRequired });
   return { orderId, status: cancelledStatus, refundRequired };
 });
