@@ -71,13 +71,15 @@
 <body>
     <section class="auth-gate" id="authGate">
         <div class="auth-card">
+            <div class="auth-brand-mark">RF</div>
             <div class="eyebrow">RestroFlow merchant</div>
-            <h1>Sign in</h1>
-            <p class="muted">Use your restaurant account to access the merchant dashboard.</p>
+            <h1>Welcome back</h1>
+            <p class="auth-intro">A calmer control room for orders, tables, kitchen flow, and restaurant growth.</p>
+            <ol class="onboarding-steps" aria-label="RestroFlow setup journey"><li class="active"><span>1</span>Sign in to your workspace</li><li><span>2</span>Review your restaurant profile</li><li><span>3</span>Open service for your guests</li></ol>
             <form id="loginForm">
                 <label for="loginEmail">Email<input id="loginEmail" type="email" autocomplete="email" required></label>
-                <label for="loginPassword" style="margin-top:14px">Password<input id="loginPassword" type="password" autocomplete="current-password" required></label>
-                <button class="btn" type="submit">Sign in</button>
+                <label for="loginPassword" style="margin-top:14px">Password<div class="password-field"><input id="loginPassword" type="password" autocomplete="current-password" required><button id="toggleLoginPassword" class="password-toggle" type="button" aria-label="Show password">Show</button></div></label>
+                <button class="btn auth-submit" id="loginSubmit" type="submit">Sign in</button>
             </form>
             <div class="auth-error" id="authError" role="alert"></div>
             <p class="muted" style="font-size:.8rem;margin-bottom:0">Account creation and profile setup are completed by the platform administrator.</p>
@@ -328,6 +330,13 @@
             authError.textContent = message;
         }
 
+        function friendlyAuthError(error) {
+            const messages = { 'auth/invalid-credential': 'We could not sign you in with those details.', 'auth/wrong-password': 'That password does not match this account.', 'auth/user-not-found': 'No merchant account was found for this email.', 'auth/too-many-requests': 'Too many attempts. Please wait a moment and try again.', 'auth/network-request-failed': 'Connection problem. Check your internet and try again.' };
+            return messages[error.code] || error.message || 'We could not sign you in right now.';
+        }
+
+        document.getElementById('toggleLoginPassword').addEventListener('click', event => { const input = document.getElementById('loginPassword'); const visible = input.type === 'text'; input.type = visible ? 'password' : 'text'; event.currentTarget.textContent = visible ? 'Show' : 'Hide'; event.currentTarget.setAttribute('aria-label', visible ? 'Show password' : 'Hide password'); });
+
         function showSignedOutState(message = '') {
             appShell.hidden = true;
             authGate.hidden = false;
@@ -345,14 +354,22 @@
         document.getElementById('loginForm').addEventListener('submit', async event => {
             event.preventDefault();
             if (!auth) return showAuthError('Authentication is not configured yet.');
-            showAuthError('Signing in…');
+            const submit = document.getElementById('loginSubmit');
+            submit.disabled = true;
+            submit.classList.add('is-loading');
+            submit.textContent = 'Signing in…';
+            showAuthError('');
             try {
                 await auth.signInWithEmailAndPassword(
                     document.getElementById('loginEmail').value.trim(),
                     document.getElementById('loginPassword').value
                 );
             } catch (error) {
-                showAuthError(error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' ? 'Email or password is incorrect.' : error.message);
+                showAuthError(friendlyAuthError(error));
+            } finally {
+                submit.disabled = false;
+                submit.classList.remove('is-loading');
+                submit.textContent = 'Sign in';
             }
         });
 

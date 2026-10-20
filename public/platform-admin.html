@@ -10,15 +10,18 @@
 </head>
 <body>
   <main class="card">
-    <p>RESTROFLOW PLATFORM</p>
-    <h1>Merchant profiles</h1>
+    <div class="auth-brand-mark">RF</div>
+    <p class="eyebrow">RESTROFLOW PLATFORM</p>
+    <h1>Set up a restaurant workspace</h1>
+    <p class="auth-intro">Create the secure merchant profile that connects an owner and their team to the right restaurant data.</p>
     <section id="loginPanel">
-      <p>Sign in with a platform administrator account.</p>
-      <form id="loginForm"><label>Email<input id="email" type="email" required autocomplete="email"></label><label>Password<input id="password" type="password" required autocomplete="current-password"></label><button type="submit">Sign in</button></form>
+      <p class="muted">Sign in with a platform administrator account.</p>
+      <form id="loginForm"><label>Email<input id="email" type="email" required autocomplete="email"></label><label>Password<div class="password-field"><input id="password" type="password" required autocomplete="current-password"><button id="togglePlatformPassword" class="password-toggle" type="button" aria-label="Show password">Show</button></div></label><button id="platformLoginSubmit" class="auth-submit" type="submit">Sign in</button></form>
     </section>
     <section id="profilePanel" hidden>
       <p id="signedInAs"></p>
-      <form id="profileForm"><label>Firebase Auth user UID<input id="uid" required></label><label>Tenant ID<input id="tenantId" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" required></label><label>Role<select id="role"><option>owner</option><option>manager</option><option>staff</option><option>receptionist</option><option>kitchen</option><option>kitchen_staff</option><option>waiter</option></select></label><label>Display name<input id="displayName"></label><button type="submit">Create merchant profile</button> <button id="signOut" class="secondary" type="button">Sign out</button></form>
+      <ol class="onboarding-steps profile-steps" aria-label="Merchant onboarding steps"><li class="active"><span>1</span>Connect owner account</li><li class="active"><span>2</span>Create restaurant profile</li><li><span>3</span>Invite the restaurant team</li><li><span>4</span>Publish the workspace</li></ol>
+      <form id="profileForm"><label>Firebase Auth user UID<input id="uid" required></label><label>Tenant ID<input id="tenantId" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" required></label><label>Role<select id="role"><option>owner</option><option>manager</option><option>staff</option><option>receptionist</option><option>kitchen</option><option>kitchen_staff</option><option>waiter</option></select></label><label>Display name<input id="displayName"></label><button id="profileSubmit" type="submit">Create merchant profile</button> <button id="signOut" class="secondary" type="button">Sign out</button></form>
     </section>
     <p id="message" class="error" role="alert"></p>
   </main>
@@ -29,10 +32,12 @@
     const firebaseConfig={apiKey:'AIzaSyAEkWv-q6YdZ2PqVmJternGsb3esoPSRFk',authDomain:'restro-6bf9c.firebaseapp.com',projectId:'restro-6bf9c',storageBucket:'restro-6bf9c.firebasestorage.app',messagingSenderId:'985955315480',appId:'1:985955315480:web:0d5dc1567a89201a6cf86d'};
     firebase.initializeApp(firebaseConfig); const auth=firebase.auth(); const message=document.getElementById('message');
     const setMessage=(text,ok=false)=>{message.textContent=text;message.className=ok?'success':'error';};
+    const friendlyAuthError=error=>({'auth/invalid-credential':'We could not sign you in with those details.','auth/wrong-password':'That password does not match this account.','auth/user-not-found':'No administrator account was found for this email.','auth/too-many-requests':'Too many attempts. Please wait a moment and try again.','auth/network-request-failed':'Connection problem. Check your internet and try again.'}[error.code]||error.message||'We could not sign you in right now.');
+    document.getElementById('togglePlatformPassword').addEventListener('click',event=>{const input=document.getElementById('password');const visible=input.type==='text';input.type=visible?'password':'text';event.currentTarget.textContent=visible?'Show':'Hide';event.currentTarget.setAttribute('aria-label',visible?'Show password':'Hide password')});
     auth.onAuthStateChanged(user=>{document.getElementById('loginPanel').hidden=!!user;document.getElementById('profilePanel').hidden=!user;if(user)document.getElementById('signedInAs').textContent=`Signed in as ${user.email||user.uid}`;});
-    document.getElementById('loginForm').addEventListener('submit',async event=>{event.preventDefault();setMessage('Signing in…');try{await auth.signInWithEmailAndPassword(document.getElementById('email').value.trim(),document.getElementById('password').value);setMessage('Signed in.',true)}catch(error){setMessage(error.message)}});
+    document.getElementById('loginForm').addEventListener('submit',async event=>{event.preventDefault();const submit=document.getElementById('platformLoginSubmit');submit.disabled=true;submit.classList.add('is-loading');submit.textContent='Signing in…';setMessage('');try{await auth.signInWithEmailAndPassword(document.getElementById('email').value.trim(),document.getElementById('password').value);setMessage('Signed in.',true)}catch(error){setMessage(friendlyAuthError(error))}finally{submit.disabled=false;submit.classList.remove('is-loading');submit.textContent='Sign in'}});
     document.getElementById('signOut').addEventListener('click',()=>auth.signOut());
-    document.getElementById('profileForm').addEventListener('submit',async event=>{event.preventDefault();setMessage('Creating profile…');try{const result=await firebase.app().functions('asia-south1').httpsCallable('createMerchantProfile')({uid:document.getElementById('uid').value.trim(),tenantId:document.getElementById('tenantId').value.trim().toLowerCase(),role:document.getElementById('role').value,displayName:document.getElementById('displayName').value.trim()});setMessage(`Profile created for ${result.data.uid}.`,true)}catch(error){setMessage(error.message||'Unable to create profile.')}});
+    document.getElementById('profileForm').addEventListener('submit',async event=>{event.preventDefault();const submit=document.getElementById('profileSubmit');submit.disabled=true;submit.classList.add('is-loading');submit.textContent='Creating profile…';setMessage('');try{const result=await firebase.app().functions('asia-south1').httpsCallable('createMerchantProfile')({uid:document.getElementById('uid').value.trim(),tenantId:document.getElementById('tenantId').value.trim().toLowerCase(),role:document.getElementById('role').value,displayName:document.getElementById('displayName').value.trim()});setMessage(`Profile created for ${result.data.uid}.`,true)}catch(error){setMessage(error.message||'Unable to create profile.')}finally{submit.disabled=false;submit.classList.remove('is-loading');submit.textContent='Create merchant profile'}});
   </script>
 </body>
 </html>
