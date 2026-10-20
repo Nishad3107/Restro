@@ -100,6 +100,28 @@ body:has(> main #orders) h1, body:has(> main #orders) h2 { color: #fffaf3; }
 body:has(> main #orders) .form { color: var(--restro-charcoal); }
 body:has(> main #orders) .muted { color: #b8c4b9 !important; }
 body:has(> main #orders) .btn.secondary { border-color: #d9a978 !important; color: #f2c18c !important; }
+.kitchen-toolbar { align-items: end; border-bottom: 1px solid rgba(255,255,255,.10); display: flex; justify-content: space-between; margin: 28px 0 18px; padding: 0 0 18px; }
+.kitchen-kicker { color: #d7a978; display: block; font-size: .68rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.kitchen-toolbar strong { color: #fffaf3; display: block; font-family: 'Playfair Display', Georgia, serif; font-size: clamp(1.3rem, 2.5vw, 1.8rem); margin-top: .2rem; }
+.kitchen-toolbar-actions { align-items: center; display: flex; gap: .65rem; }
+.kitchen-order-count { color: #b8c4b9; font-size: .8rem; font-weight: 800; }
+.sound-toggle { background: transparent !important; border: 1px solid rgba(242,193,140,.62) !important; border-radius: 999px !important; color: #f2c18c !important; font-size: .78rem; min-height: 42px; padding: .6rem .9rem; }
+.sound-toggle.enabled { background: #3f5a43 !important; border-color: #7da078 !important; color: #f4faef !important; }
+.kitchen-notice { background: #6b4934; border: 1px solid #d6a06b; border-radius: 12px; color: #fff4e5; font-size: .86rem; font-weight: 800; margin-bottom: 18px; padding: .85rem 1rem; }
+.kitchen-order-card { border-left: 4px solid #8e9a8d !important; min-height: 310px; position: relative; transition: border-color .25s ease, transform .25s ease, box-shadow .25s ease; }
+.kitchen-order-card:hover { box-shadow: 0 20px 45px rgba(0,0,0,.22) !important; transform: translateY(-3px); }
+.kitchen-order-card[data-status="order-placed"] { border-left-color: #d7a978 !important; }
+.kitchen-order-card[data-status="preparing"] { border-left-color: #c98545 !important; }
+.kitchen-order-card[data-status="ready"] { border-left-color: #7da078 !important; }
+.kitchen-table-number { color: #f2c18c; font-size: .9rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+body:has(> main #orders) .kitchen-order-card h2 { font-size: clamp(1.8rem, 4vw, 2.65rem); margin: .5rem 0 1rem; }
+.prep-timer { align-items: center; background: rgba(0,0,0,.16); border: 1px solid rgba(255,255,255,.08); border-radius: 10px; display: flex; justify-content: space-between; margin: 1rem 0; padding: .7rem .85rem; }
+.prep-timer span { color: #b8c4b9; font-size: .7rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.prep-timer strong { color: #f2c18c; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1.15rem; }
+.special-instruction { background: #614434; border-left: 3px solid #e0a26b; border-radius: 8px; color: #ffe3c0 !important; font-weight: 800; margin: 1rem 0 !important; padding: .7rem .8rem; }
+.kitchen-primary-action { font-size: 1rem !important; min-height: 52px !important; width: 100%; }
+.new-kitchen-order { animation: kitchen-new-order 1.2s ease-in-out 2; }
+@keyframes kitchen-new-order { 0%, 100% { box-shadow: 0 0 0 rgba(215,169,120,0); } 50% { box-shadow: 0 0 0 5px rgba(215,169,120,.24), 0 20px 45px rgba(0,0,0,.22); } }
 
 /* Merchant dashboard */
 .shell { background: transparent; }
@@ -177,6 +199,11 @@ body:has(#profilePanel) > main { width: min(100%, 600px); }
   .metric strong { font-size: 1.55rem !important; }
   .toast-region { bottom: 14px; left: 14px; right: 14px; }
   .toast { max-width: none; }
+}
+@media (max-width: 620px) {
+  .kitchen-toolbar { align-items: flex-start; flex-direction: column; gap: 14px; }
+  .kitchen-toolbar-actions { justify-content: space-between; width: 100%; }
+  body:has(> main #orders) .kitchen-order-card { min-height: 280px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
