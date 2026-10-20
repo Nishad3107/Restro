@@ -941,7 +941,7 @@
         function updateMenuQuantityLabels() {
             document.querySelectorAll('[data-menu-qty]').forEach(label => {
                 const item = cart.find(entry => String(entry.id || entry.name) === String(label.dataset.menuQty));
-                if (item) label.textContent = item.quantity;
+                label.textContent = item ? item.quantity : '0';
             });
         }
 
