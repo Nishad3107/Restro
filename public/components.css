@@ -1,0 +1,23 @@
+/* Shared RestroFlow component primitives. Page-specific layouts stay in theme.css. */
+.ui-btn { align-items: center; border: 1px solid transparent; border-radius: var(--restro-radius-sm); display: inline-flex; font-weight: 800; justify-content: center; min-height: 44px; padding: .72rem 1.05rem; }
+.ui-btn-primary { background: var(--restro-copper); color: #fffaf3; }
+.ui-btn-primary:hover { background: var(--restro-copper-deep); transform: translateY(-2px); }
+.ui-btn-quiet { background: transparent; border-color: var(--restro-line); color: var(--restro-charcoal); }
+.ui-btn-quiet:hover { background: #f1e2d0; border-color: var(--restro-copper); }
+.ui-card { background: var(--restro-paper); border: 1px solid var(--restro-line); border-radius: var(--restro-radius); box-shadow: var(--restro-shadow-soft); }
+.ui-badge { border-radius: 999px; display: inline-flex; font-size: .7rem; font-weight: 800; letter-spacing: .06em; padding: .38rem .62rem; }
+.ui-badge-success { background: var(--restro-olive-soft); color: var(--restro-olive); }
+.ui-badge-warning { background: #f3e8cf; color: #8a6329; }
+.ui-badge-danger { background: #f2dfd9; color: var(--restro-danger); }
+.ui-empty, .ui-error, .ui-loading { border: 1px dashed var(--restro-line); border-radius: var(--restro-radius-sm); color: var(--restro-muted); padding: 1.2rem; text-align: center; }
+.ui-error { background: #fff5f1; border-color: #e3b6a8; color: var(--restro-danger); }
+.ui-loading { animation: ui-shimmer 1.4s ease-in-out infinite; background: linear-gradient(90deg, rgba(228,217,201,.25), rgba(255,253,248,.9), rgba(228,217,201,.25)); background-size: 200% 100%; }
+.ui-modal-backdrop { align-items: center; background: rgba(41,39,34,.58); display: flex; inset: 0; justify-content: center; padding: 20px; position: fixed; z-index: 600; }
+.ui-modal { background: var(--restro-paper); border: 1px solid var(--restro-line); border-radius: var(--restro-radius); box-shadow: var(--restro-shadow); max-height: min(720px, calc(100vh - 40px)); max-width: 620px; overflow: auto; padding: clamp(20px, 4vw, 32px); width: min(100%, 620px); }
+.ui-toast-region { bottom: 22px; display: grid; gap: .6rem; pointer-events: none; position: fixed; right: 22px; z-index: 500; }
+.ui-toast { animation: ui-toast-in .3s cubic-bezier(.22,1,.36,1) both; background: var(--restro-charcoal); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; box-shadow: var(--restro-shadow); color: #fffaf3; font-size: .82rem; max-width: 340px; padding: .8rem 1rem; }
+.ui-toast-success { border-left: 4px solid #789b76; }
+.ui-toast-error { border-left: 4px solid #cf806c; }
+@keyframes ui-shimmer { 0%, 100% { background-position: 0 0; opacity: .72; } 50% { background-position: 100% 0; opacity: 1; } }
+@keyframes ui-toast-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 620px) { .ui-toast-region { bottom: 14px; left: 14px; right: 14px; } .ui-toast { max-width: none; } }
