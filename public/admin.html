@@ -87,7 +87,7 @@
         <aside>
             <div class="eyebrow">RestroFlow merchant</div>
             <p class="brand">Control room</p>
-            <div class="tenant-card"><strong id="tenantName">Royal Rasoi</strong><span id="tenantSlug">royal-rasoi</span></div>
+            <div class="tenant-card"><strong id="tenantName">Royal Rasoi</strong><span id="tenantSlug">royal-rasoi / main</span><label class="branch-label" for="branchSwitcher">Branch</label><select id="branchSwitcher" aria-label="Switch restaurant branch"><option value="main">Main branch</option></select></div>
             <nav aria-label="Dashboard sections">
                 <button class="active" data-view="overview">Overview</button>
                 <button data-view="orders">Orders</button>
@@ -107,6 +107,7 @@
                 <div class="session"><small id="currentUser"></small><button class="btn secondary" id="logoutButton" type="button">Sign out</button><button class="btn" id="newOrderButton" type="button">Create demo order</button></div>
             </div>
             <div class="notice">Cloud mode is active. Restaurant settings, menu, and orders are synchronized with your tenant-scoped Firestore location.</div>
+            <div class="quick-actions" aria-label="Quick actions"><button class="btn" id="quickDemoOrder" type="button">New test order</button><button class="btn secondary" id="quickTables" type="button">Tables &amp; QR</button><button class="btn secondary" id="quickKitchen" type="button">Kitchen display</button><button class="btn secondary" id="quickBilling" type="button">Open billing</button></div>
 
             <section class="view active" id="overview">
                 <div class="cards">
@@ -114,8 +115,13 @@
                     <div class="card metric">Open orders<strong id="metricOpen">0</strong></div>
                     <div class="card metric">Revenue today<strong id="metricRevenue">₹0</strong></div>
                     <div class="card metric">Menu items<strong id="metricItems">0</strong></div>
+                    <div class="card metric">Occupied tables<strong id="metricTables">0 / 0</strong></div>
                 </div>
-                <div class="panel"><div class="panel-header"><h2>Recent orders</h2><button class="btn secondary" data-jump="orders" type="button">View all</button></div><div id="recentOrders"></div></div>
+                <div class="dashboard-grid">
+                    <div class="panel revenue-panel"><div class="panel-header"><div><span class="panel-kicker">Last seven days</span><h2>Revenue pulse</h2></div><span class="chart-total" id="chartTotal">₹0</span></div><div id="revenueChart" class="revenue-chart" aria-label="Revenue for the last seven days"></div></div>
+                    <div class="panel occupancy-panel"><div class="panel-header"><div><span class="panel-kicker">Live floor view</span><h2>Table occupancy</h2></div><button class="btn secondary" id="quickTablesInline" type="button">Manage</button></div><div id="occupancyMap" class="occupancy-map"></div></div>
+                </div>
+                <div class="panel active-orders-panel"><div class="panel-header"><div><span class="panel-kicker">Live queue</span><h2>Active orders</h2></div><button class="btn secondary" data-jump="orders" type="button">View all</button></div><div id="recentOrders"></div></div>
             </section>
 
             <section class="view" id="orders"><div class="panel"><div class="panel-header"><h2>Orders</h2><button class="btn secondary" id="clearDemoOrders" type="button">Clear demo data</button></div><div id="ordersTable"></div></div></section>
@@ -125,6 +131,7 @@
             <section class="view" id="settings"><div class="panel"><div class="panel-header"><h2>Restaurant settings</h2></div><form id="settingsForm"><div class="form-grid"><label>Restaurant name<input id="settingsName" required></label><label>Public slug<input id="settingsSlug" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" required></label><label>Phone<input id="settingsPhone" required></label><label>Order mode<select id="settingsMode"><option>Delivery and pickup</option><option>Pickup only</option><option>Delivery only</option></select></label><label>Tax rate (%)<input id="settingsTaxRate" type="number" min="0" max="100" step="0.01" required></label><label>Default delivery fee<input id="settingsDeliveryFee" type="number" min="0" step="1" required></label><label>Preparation time (minutes)<input id="settingsPrepTime" type="number" min="1" max="240" step="1" required></label><label style="align-items:center;display:flex;gap:8px;margin-top:24px"><input id="settingsClosedMode" type="checkbox" style="width:auto"> Closed mode</label></div><h3 style="margin:26px 0 10px">Business hours</h3><div id="businessHoursEditor"></div><h3 style="margin:26px 0 10px">Delivery zones</h3><p class="muted" style="font-size:.85rem">One zone per line: <code>Zone name | ZIP1, ZIP2 | fee</code></p><textarea id="deliveryZonesText" rows="5" style="border:1px solid var(--line);border-radius:8px;padding:11px;width:100%" placeholder="Nearby | 411001, 411005 | 40"></textarea><div style="margin-top:16px"><button class="btn" type="submit">Save settings</button></div></form></div></section>
         </main>
     </div>
+    <div id="toastRegion" class="toast-region" aria-live="polite" aria-atomic="true"></div>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -143,7 +150,7 @@
         ].map(([name, price, category], index) => ({ id: `item-${index + 1}`, name, price, category, available: true }));
         const read = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
         const write = (key, value) => localStorage.setItem(key, JSON.stringify(value));
-        let settings = read(keys.settings, defaultSettings); let menu = read(keys.menu, defaultMenu); let orders = read(keys.orders, []); let editingId = null;
+        let settings = read(keys.settings, defaultSettings); let menu = read(keys.menu, defaultMenu); let orders = read(keys.orders, []); let tables = []; let editingId = null;
         const money = value => `₹${Number(value || 0).toFixed(2)}`;
         const esc = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         const statusClass = status => String(status).toLowerCase().replace(/\s+/g, '-');
@@ -224,16 +231,44 @@
                 write(keys.orders, orders);
                 render();
             }, error => console.warn('Live order updates unavailable:', error));
+            ref.collection('tables').onSnapshot(snapshot => {
+                tables = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                render();
+            }, error => console.warn('Live table updates unavailable:', error));
         }
         function render() {
             document.getElementById('tenantName').textContent = settings.name; document.getElementById('tenantSlug').textContent = `${settings.slug} / ${LOCATION_ID}`;
-            document.getElementById('metricOrders').textContent = orders.length; document.getElementById('metricOpen').textContent = orders.filter(o => !['Completed','Rejected'].includes(o.status)).length; document.getElementById('metricRevenue').textContent = money(orders.filter(o => o.status !== 'Rejected').reduce((sum,o) => sum + Number(o.total || 0), 0)); document.getElementById('metricItems').textContent = menu.filter(i => i.available).length;
+            const activeOrders = orders.filter(o => !['Completed','Rejected','CANCELLED','COMPLETED'].includes(o.status));
+            document.getElementById('metricOrders').textContent = orders.length; document.getElementById('metricOpen').textContent = activeOrders.length; document.getElementById('metricRevenue').textContent = money(orders.filter(o => o.status !== 'Rejected' && o.status !== 'CANCELLED').reduce((sum,o) => sum + Number(o.total || 0), 0)); document.getElementById('metricItems').textContent = menu.filter(i => i.available).length;
+            const occupiedCount = tables.filter(table => table.status === 'OCCUPIED').length;
+            document.getElementById('metricTables').textContent = `${occupiedCount} / ${tables.length}`;
+            populateBranchSwitcher(); renderRevenueChart(); renderOccupancy();
             renderOrders(); renderMenu();
             document.getElementById('settingsName').value = settings.name; document.getElementById('settingsSlug').value = settings.slug; document.getElementById('settingsPhone').value = settings.phone; document.getElementById('settingsMode').value = settings.mode; document.getElementById('settingsTaxRate').value = Number(settings.taxRate ?? 0.08) * 100; document.getElementById('settingsDeliveryFee').value = Number(settings.deliveryFee ?? 50); document.getElementById('settingsPrepTime').value = Number(settings.prepTimeMinutes ?? 30); document.getElementById('settingsClosedMode').checked = settings.closedMode === true; renderBusinessHours(); renderDeliveryZones();
         }
+        function populateBranchSwitcher() {
+            const switcher = document.getElementById('branchSwitcher'); if (!switcher) return;
+            const branches = Array.isArray(settings.branches) && settings.branches.length ? settings.branches : [{ id: LOCATION_ID, name: LOCATION_ID === 'main' ? 'Main branch' : LOCATION_ID }];
+            switcher.innerHTML = branches.map(branch => { const id = typeof branch === 'string' ? branch : branch.id || branch.slug; const name = typeof branch === 'string' ? branch : branch.name || id; return `<option value="${esc(id)}" ${id === LOCATION_ID ? 'selected' : ''}>${esc(name)}</option>`; }).join('');
+        }
+        function renderRevenueChart() {
+            const chart = document.getElementById('revenueChart'); if (!chart) return;
+            const days = Array.from({ length: 7 }, (_, index) => { const date = new Date(); date.setHours(0, 0, 0, 0); date.setDate(date.getDate() - (6 - index)); return date; });
+            const values = days.map(day => orders.filter(order => { const date = new Date(order.createdAt); return !Number.isNaN(date.getTime()) && date.toDateString() === day.toDateString() && !['Rejected','CANCELLED'].includes(order.status); }).reduce((sum, order) => sum + Number(order.total || 0), 0));
+            const max = Math.max(...values, 1); const total = values.reduce((sum, value) => sum + value, 0); document.getElementById('chartTotal').textContent = money(total);
+            chart.innerHTML = values.map((value, index) => `<div class="revenue-bar" title="${days[index].toLocaleDateString()} · ${money(value)}"><span class="revenue-bar-value">${value ? money(value) : '—'}</span><span class="revenue-bar-fill" style="height:${Math.max(8, value / max * 118)}px"></span><span class="revenue-bar-label">${days[index].toLocaleDateString(undefined, { weekday: 'short' })}</span></div>`).join('');
+        }
+        function renderOccupancy() {
+            const map = document.getElementById('occupancyMap'); if (!map) return;
+            map.innerHTML = tables.length ? tables.map(table => { const status = String(table.status || 'AVAILABLE').toLowerCase(); return `<div class="occupancy-table ${esc(status)}"><strong>${esc(table.number || table.id)}</strong><small>${esc(table.status || 'AVAILABLE')}</small></div>`; }).join('') : '<div class="empty">No tables configured yet. Add tables to see your live floor.</div>';
+        }
+        function showToast(message, type = 'success') {
+            const region = document.getElementById('toastRegion'); if (!region) return;
+            const toast = document.createElement('div'); toast.className = `toast ${type}`; toast.textContent = message; region.appendChild(toast); window.setTimeout(() => toast.remove(), 3600);
+        }
         function orderMarkup(order) { return `<div style="align-items:center;border-bottom:1px solid var(--line);display:flex;gap:12px;justify-content:space-between;padding:13px 0"><span><strong>${esc(order.id)}</strong><br><small class="muted">${esc(order.orderType === 'DINE_IN' ? `Dine-in · Table ${order.tableNumber || order.tableId || '—'}` : 'Delivery')} · ${esc(order.customer || 'Guest')} · ${esc(order.items || 'Order')}</small></span><span class="status ${statusClass(order.status)}">${esc(order.status)}</span><strong>${money(order.total)}</strong></div>`; }
         function renderOrders() {
-            const sorted = [...orders].reverse(); const recent = document.getElementById('recentOrders'); recent.innerHTML = sorted.slice(0,5).map(orderMarkup).join('') || '<div class="empty">No orders yet. Create a demo order to preview the workflow.</div>';
+            const sorted = [...orders].reverse(); const active = sorted.filter(order => !['Completed','Rejected','CANCELLED','COMPLETED'].includes(order.status)); const recent = document.getElementById('recentOrders'); recent.innerHTML = active.slice(0,5).map(orderMarkup).join('') || '<div class="empty">No active orders right now. New orders will appear here in real time.</div>';
             const table = document.getElementById('ordersTable');
             table.innerHTML = sorted.length ? `<table><thead><tr><th>Order</th><th>Customer</th><th>Total</th><th>Status</th><th>Update</th></tr></thead><tbody>${sorted.map(order => { const statuses = order.orderType === 'DINE_IN' ? dineInStatuses : deliveryStatuses; return `<tr><td><strong>${esc(order.id)}</strong><br><small class="muted">${esc(order.orderType === 'DINE_IN' ? `Dine-in · Table ${order.tableNumber || order.tableId || '—'}` : 'Delivery')} · ${esc(order.createdAt || '')}</small></td><td>${esc(order.customer || 'Guest')}<br><small class="muted">${esc(order.items || '')}</small></td><td>${money(order.total)}</td><td><span class="status ${statusClass(order.status)}">${esc(order.status)}</span></td><td><select aria-label="Update ${esc(order.id)} status" data-order-status="${esc(order.id)}">${statuses.map(s => `<option ${s === order.status ? 'selected' : ''}>${s}</option>`).join('')}</select></td></tr>`; }).join('')}</tbody></table>` : '<div class="empty">No orders yet.</div>';
             table.querySelectorAll('[data-order-status]').forEach(select => select.addEventListener('change', async event => {
@@ -248,9 +283,10 @@
                     order.status = nextStatus;
                     write(keys.orders, orders);
                     render();
+                    showToast(`Order ${order.id} moved to ${nextStatus}.`);
                 } catch (error) {
                     event.target.value = previousStatus;
-                    alert(error.message || 'Unable to update the order status.');
+                    showToast(error.message || 'Unable to update the order status.', 'error');
                     select.disabled = false;
                 }
             }));
@@ -259,12 +295,18 @@
         function editItem(id) { const item = menu.find(i => i.id === id); if (!item) return; editingId = id; document.getElementById('itemName').value = item.name; document.getElementById('itemPrice').value = item.price; document.getElementById('itemCategory').value = item.category; document.getElementById('itemAvailable').value = String(item.available); document.getElementById('menuForm').hidden = false; }
         document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => { document.querySelectorAll('[data-view]').forEach(item => item.classList.remove('active')); button.classList.add('active'); document.querySelectorAll('.view').forEach(view => view.classList.toggle('active', view.id === button.dataset.view)); }));
         document.querySelectorAll('[data-jump]').forEach(button => button.addEventListener('click', () => document.querySelector(`[data-view="${button.dataset.jump}"]`).click()));
+        document.getElementById('branchSwitcher').addEventListener('change', event => { window.location.href = `admin.html?tenant=${encodeURIComponent(TENANT_ID)}&location=${encodeURIComponent(event.target.value)}`; });
+        document.getElementById('quickDemoOrder').addEventListener('click', () => document.getElementById('newOrderButton').click());
+        document.getElementById('quickTablesInline').addEventListener('click', () => document.getElementById('quickTables').click());
+        document.getElementById('quickTables').addEventListener('click', () => { window.location.href = document.getElementById('tablesLink').href; });
+        document.getElementById('quickKitchen').addEventListener('click', () => { window.location.href = document.getElementById('kitchenLink').href; });
+        document.getElementById('quickBilling').addEventListener('click', () => { window.location.href = document.getElementById('billingLink').href; });
         document.getElementById('addItemButton').addEventListener('click', () => { editingId = null; document.getElementById('menuForm').reset(); document.getElementById('menuForm').hidden = false; });
         document.getElementById('cancelItem').addEventListener('click', () => document.getElementById('menuForm').hidden = true);
         document.getElementById('menuForm').addEventListener('submit', event => { event.preventDefault(); const item = { id: editingId || `item-${Date.now()}`, name: document.getElementById('itemName').value.trim(), price: Number(document.getElementById('itemPrice').value), category: document.getElementById('itemCategory').value.trim(), available: document.getElementById('itemAvailable').value === 'true' }; if (!item.name || !item.category || !Number.isFinite(item.price) || item.price <= 0) return; const index = menu.findIndex(existing => existing.id === editingId); if (index >= 0) menu[index] = item; else menu.push(item); saveAll(); document.getElementById('menuForm').hidden = true; render(); });
-        document.getElementById('settingsForm').addEventListener('submit', event => { event.preventDefault(); settings = { ...settings, name: document.getElementById('settingsName').value.trim(), slug: document.getElementById('settingsSlug').value.trim().toLowerCase(), phone: document.getElementById('settingsPhone').value.trim(), mode: document.getElementById('settingsMode').value, taxRate: Number(document.getElementById('settingsTaxRate').value) / 100, deliveryFee: Number(document.getElementById('settingsDeliveryFee').value), prepTimeMinutes: Number(document.getElementById('settingsPrepTime').value), closedMode: document.getElementById('settingsClosedMode').checked, businessHours: readBusinessHours(), deliveryZones: readDeliveryZones() }; saveAll(); render(); });
-        document.getElementById('newOrderButton').addEventListener('click', () => { orders.push({ id: `RR-${Date.now().toString().slice(-6)}`, customer: 'Demo customer', items: 'Paneer Tikka × 2', total: 540, status: 'New', createdAt: new Date().toLocaleString() }); saveAll(); render(); });
-        document.getElementById('clearDemoOrders').addEventListener('click', () => { orders = []; saveAll(); render(); });
+        document.getElementById('settingsForm').addEventListener('submit', event => { event.preventDefault(); settings = { ...settings, name: document.getElementById('settingsName').value.trim(), slug: document.getElementById('settingsSlug').value.trim().toLowerCase(), phone: document.getElementById('settingsPhone').value.trim(), mode: document.getElementById('settingsMode').value, taxRate: Number(document.getElementById('settingsTaxRate').value) / 100, deliveryFee: Number(document.getElementById('settingsDeliveryFee').value), prepTimeMinutes: Number(document.getElementById('settingsPrepTime').value), closedMode: document.getElementById('settingsClosedMode').checked, businessHours: readBusinessHours(), deliveryZones: readDeliveryZones() }; saveAll(); render(); showToast('Restaurant settings saved.'); });
+        document.getElementById('newOrderButton').addEventListener('click', () => { orders.push({ id: `RR-${Date.now().toString().slice(-6)}`, customer: 'Demo customer', items: 'Paneer Tikka × 2', total: 540, status: 'New', createdAt: new Date().toLocaleString() }); saveAll(); render(); showToast('Test order added to the active queue.'); });
+        document.getElementById('clearDemoOrders').addEventListener('click', () => { orders = []; saveAll(); render(); showToast('Demo orders cleared.'); });
         render();
     </script>
     <script>
