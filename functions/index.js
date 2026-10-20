@@ -343,6 +343,30 @@ exports.createSessionBill = onCall(async request => {
   return { billId: billRef.id, subtotal, tax, serviceCharge, total, shares };
 });
 
+exports.completeDiningSession = onCall(async request => {
+  const data = request.data || {};
+  const tenantId = cleanText(data.tenantId, 80);
+  const locationId = cleanText(data.locationId, 80) || 'main';
+  const sessionId = cleanText(data.sessionId, 100);
+  if (!validId(tenantId) || !validId(locationId) || !sessionId) throw new HttpsError('invalid-argument', 'Invalid session completion request.');
+  await requireTenantMember(request, tenantId, ['owner', 'manager', 'receptionist', 'staff', 'platform_admin']);
+  const location = locationRef(tenantId, locationId);
+  const sessionRef = location.collection('diningSessions').doc(sessionId);
+  const sessionSnapshot = await sessionRef.get();
+  if (!sessionSnapshot.exists) throw new HttpsError('not-found', 'Dining session not found.');
+  const session = sessionSnapshot.data() || {};
+  if (!['ACTIVE', 'BILL_REQUESTED'].includes(session.status)) throw new HttpsError('failed-precondition', 'This dining session is already closed.');
+  const ordersSnapshot = await location.collection('orders').where('sessionId', '==', sessionId).get();
+  const orders = ordersSnapshot.docs.map(doc => doc.data());
+  if (!orders.length || orders.some(order => !['PAID', 'COMPLETED', 'CANCELLED'].includes(order.status))) {
+    throw new HttpsError('failed-precondition', 'Mark every session order as paid before completing the session.');
+  }
+  const settled = await settleDiningSessionIfPaid(tenantId, locationId, sessionId);
+  if (!settled) throw new HttpsError('failed-precondition', 'The session could not be settled yet.');
+  await writeAuditLog(tenantId, locationId, 'dining_session.completed', request.auth, { sessionId });
+  return { sessionId, status: 'COMPLETED', tableId: session.tableId || null };
+});
+
 exports.cancelOrder = onCall(async request => {
   const data = request.data || {};
   const tenantId = cleanText(data.tenantId, 80);

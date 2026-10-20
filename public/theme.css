@@ -94,6 +94,39 @@ body:has(#tables) .grid, body:has(#requests) .grid, body:has(#sessions) .grid, b
 body:has(#tables) .card h2, body:has(#requests) .card h2, body:has(#sessions) .card h2, body:has(#orders) .card h2 { margin-top: 0; }
 body:has(#tables) .card img { border-radius: 12px; }
 body:has(#tables) .card select { margin-top: 12px; }
+.billing-toolbar { align-items: end; display: flex; justify-content: space-between; margin: 30px 0 18px; }
+.billing-kicker { color: var(--restro-copper-deep); display: block; font-size: .68rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.billing-toolbar strong { display: block; font-family: 'Playfair Display', Georgia, serif; font-size: clamp(1.8rem, 4vw, 2.7rem); line-height: 1.1; margin: .25rem 0 .4rem; }
+.billing-toolbar p { color: var(--restro-muted); margin: 0; }
+.billing-toolbar-mark { border: 1px solid #b8ceb7; border-radius: 999px; color: var(--restro-olive); font-size: .68rem; font-weight: 800; letter-spacing: .1em; padding: .55rem .8rem; }
+.billing-session-card { overflow: hidden; }
+.billing-card-top { align-items: center; display: flex; justify-content: space-between; margin-bottom: 4px; }
+.session-label { color: var(--restro-muted); font-size: .66rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.payment-badge { border-radius: 999px; font-size: .67rem; font-weight: 800; letter-spacing: .06em; padding: .38rem .58rem; }
+.payment-badge.pending { background: #f3e8cf; color: #8a6329; }
+.payment-badge.paid, .payment-badge.succeeded { background: var(--restro-olive-soft); color: var(--restro-olive); }
+.payment-badge.failed { background: #f2dfd9; color: var(--restro-danger); }
+.billing-timeline { display: flex; gap: 0; justify-content: space-between; list-style: none; margin: 1.4rem 0; padding: 0; position: relative; }
+.billing-timeline::before { background: var(--restro-line); content: ''; height: 1px; left: 8%; position: absolute; right: 8%; top: 7px; }
+.billing-timeline li { color: var(--restro-muted); font-size: .61rem; max-width: 74px; position: relative; text-align: center; z-index: 1; }
+.billing-timeline li span { background: var(--restro-line); border: 3px solid var(--restro-paper); border-radius: 50%; display: block; height: 15px; margin: 0 auto .38rem; width: 15px; }
+.billing-timeline li.current { color: var(--restro-copper-deep); font-weight: 800; }
+.billing-timeline li.current span { background: var(--restro-copper); box-shadow: 0 0 0 4px rgba(184,111,67,.13); }
+.billing-timeline li.done { color: var(--restro-olive); }
+.billing-timeline li.done span { background: var(--restro-olive); }
+.bill-items-wrap { border-top: 1px solid var(--restro-line); margin-top: 1rem; padding-top: 1rem; }
+.bill-items { list-style: none; margin: .6rem 0 0; padding: 0; }
+.bill-items li { border-bottom: 1px dashed var(--restro-line); display: flex; font-size: .8rem; justify-content: space-between; padding: .45rem 0; }
+.bill-details { margin-top: 1rem; }
+.bill-line, .bill-total { display: flex; justify-content: space-between; padding: .35rem 0; }
+.bill-line { color: var(--restro-muted); font-size: .8rem; }
+.bill-total { border-top: 1px solid var(--restro-line); color: var(--restro-charcoal); font-family: 'Playfair Display', Georgia, serif; font-size: 1.25rem; margin-top: .45rem; padding-top: .7rem; }
+.split-preview { background: #f5ecdf; border-radius: 10px; color: var(--restro-copper-deep); font-size: .76rem; font-weight: 800; margin-top: 1rem; padding: .65rem .8rem; }
+.billing-card-actions { display: flex; gap: .6rem; margin-top: 1rem; }
+.billing-card-actions .btn { flex: 1; font-size: .76rem; padding-left: .65rem; padding-right: .65rem; }
+.complete-session { background: var(--restro-olive) !important; }
+.complete-session:hover { background: #304932 !important; }
+.complete-session:disabled { cursor: not-allowed; opacity: .55; transform: none !important; }
 .table-toolbar { align-items: end; display: flex; justify-content: space-between; margin: 30px 0 14px; }
 .table-kicker { color: var(--restro-copper-deep); display: block; font-size: .68rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
 .table-toolbar strong { color: var(--restro-charcoal); display: block; font-family: 'Playfair Display', Georgia, serif; font-size: 1.55rem; margin-top: .2rem; }
@@ -247,6 +280,11 @@ body:has(#profilePanel) > main { width: min(100%, 600px); }
   .table-occupancy-summary small { font-size: .6rem; }
   .table-layout-shape { margin-left: auto; margin-right: auto; }
   .qr-modal-actions { flex-direction: column; }
+}
+@media (max-width: 620px) {
+  .billing-toolbar { align-items: flex-start; flex-direction: column; gap: 12px; }
+  .billing-card-actions { flex-direction: column; }
+  .billing-timeline li { font-size: .56rem; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
