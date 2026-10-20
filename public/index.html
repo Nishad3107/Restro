@@ -440,9 +440,13 @@
 </head>
 <body>
     <header>
-        <h1>Royal Rasoi</h1>
-        <p>Authentic Indian Royal Cuisine</p>
-        <div id="orderingContext" style="background:rgba(0,0,0,.45);border:1px solid rgba(244,162,97,.5);border-radius:999px;color:#fff;padding:.55rem 1rem;z-index:1;">Order for delivery</div>
+        <div class="restaurant-intro">
+            <div class="restaurant-logo-wrap"><img id="restaurantLogo" class="restaurant-logo" alt="Restaurant logo" hidden><span id="restaurantInitials" class="restaurant-initials">RR</span></div>
+            <p class="welcome-line" id="welcomeLine">Welcome to <strong id="welcomeRestaurantName">Royal Rasoi</strong></p>
+            <h1>Royal Rasoi</h1>
+            <p id="restaurantTagline">Authentic Indian Royal Cuisine</p>
+            <div id="orderingContext" class="table-badge">Order for delivery</div>
+        </div>
     </header>
 
     <nav>
@@ -457,6 +461,7 @@
     <div id="menu" class="page active">
         <div class="container">
             <h2 class="section-title">Our Menu</h2>
+            <div id="categoryTabs" class="category-tabs" role="tablist" aria-label="Menu categories"></div>
             
             <h3 style="color: #f4a261; margin: 2rem 0 1rem 0; font-size: 2rem;">Royal Starters</h3>
             <div class="menu-grid">
@@ -656,6 +661,7 @@
                 <p id="confirmationMessage" style="font-size: 1.1rem; margin: 2rem 0;">Your delicious meal is being prepared and will be delivered soon.</p>
                 <p id="confirmationTable" hidden style="font-size:1.1rem;color:#f4a261;font-weight:700;"></p>
                 <div id="orderStatus" aria-live="polite" style="background:rgba(255,255,255,.35);border-radius:10px;color:#486048;font-weight:700;margin:1rem auto;padding:.8rem;max-width:360px;">Status: New</div>
+                <ol id="orderTimeline" class="order-timeline" aria-label="Order progress"></ol>
                 <p id="estimatedTime" style="color: #ddd;">Estimated delivery time: 30-45 minutes</p>
                 <button class="btn" id="cancelOrderButton" type="button" onclick="cancelCurrentOrder()" style="background:#b24f38;margin-top:1rem;">Cancel Order</button>
                 <div id="dineInActions" hidden style="margin-top:1rem"><button class="btn btn-secondary" type="button" onclick="requestTableHelp('WAITER')">🔔 Call Waiter</button> <button class="btn btn-secondary" type="button" onclick="requestTableHelp('BILL')">🧾 Request Bill</button></div>
@@ -669,6 +675,13 @@
         🛒
         <span class="cart-count" id="cartCount" aria-live="polite">0</span>
     </button>
+    <button type="button" class="mobile-cart-bar" id="mobileCartBar" onclick="showPage('cart')" hidden>
+        <span><strong id="mobileCartCount">0</strong> items in cart</span><strong id="mobileCartTotal">₹0.00</strong><span>View cart →</span>
+    </button>
+    <div id="tableActions" class="table-actions" hidden>
+        <button type="button" onclick="requestTableHelp('WAITER')">Call waiter</button>
+        <button type="button" onclick="requestTableHelp('BILL')">Request bill</button>
+    </div>
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -862,23 +875,34 @@
                 return groups;
             }, {});
 
+            const tabs = document.getElementById('categoryTabs');
+            if (tabs) {
+                tabs.innerHTML = `<button class="category-tab active" type="button" data-category="all" role="tab" aria-selected="true">All dishes</button>` +
+                    Object.keys(grouped).map(category => `<button class="category-tab" type="button" data-category="${escapeHtml(category)}" role="tab" aria-selected="false">${escapeHtml(category)}</button>`).join('');
+                tabs.querySelectorAll('[data-category]').forEach(button => button.addEventListener('click', () => filterMenuCategory(button.dataset.category)));
+            }
+
             Object.entries(grouped).forEach(([category, items]) => {
                 const heading = document.createElement('h3');
+                heading.dataset.category = category;
                 heading.textContent = category;
                 heading.style.cssText = 'color:#667a62;margin:3rem 0 1.25rem;font-family:Playfair Display,Georgia,serif;font-size:clamp(1.65rem,3vw,2.25rem);';
                 catalog.appendChild(heading);
 
                 const grid = document.createElement('div');
                 grid.className = 'menu-grid';
+                grid.dataset.category = category;
                 items.forEach(item => {
                     const card = document.createElement('div');
                     card.className = 'menu-item';
+                    const isNonVeg = item.nonVeg === true || item.isVeg === false || item.veg === false;
+                    const dietaryLabel = isNonVeg ? 'NON-VEG' : 'VEG';
                     card.innerHTML = `
                         <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=500&fit=crop" alt="${escapeHtml(item.name)}" class="dish-image">
                         <h3>${escapeHtml(item.name)}</h3>
-                        <span class="price">₹${item.price.toFixed(2)}</span>
+                        <div class="menu-card-meta"><span class="dietary-indicator ${isNonVeg ? 'non-veg' : 'veg'}"><i aria-hidden="true"></i>${dietaryLabel}</span><span class="price">₹${item.price.toFixed(2)}</span></div>
                         <p>${escapeHtml(item.description || 'Prepared fresh with carefully selected ingredients.')}</p>
-                        <button class="btn" type="button" data-menu-id="${escapeHtml(item.id)}" data-menu-name="${escapeHtml(item.name)}" data-menu-price="${item.price}">Add to Cart</button>
+                        <div class="menu-card-actions"><div class="menu-quantity-controls" aria-label="Quantity for ${escapeHtml(item.name)}"><button type="button" data-menu-action="decrease" data-menu-id="${escapeHtml(item.id)}" data-menu-name="${escapeHtml(item.name)}" data-menu-price="${item.price}" aria-label="Decrease ${escapeHtml(item.name)}">−</button><span data-menu-qty="${escapeHtml(item.id)}">0</span><button type="button" data-menu-action="increase" data-menu-id="${escapeHtml(item.id)}" data-menu-name="${escapeHtml(item.name)}" data-menu-price="${item.price}" aria-label="Increase ${escapeHtml(item.name)}">+</button></div><button class="btn" type="button" data-menu-action="add" data-menu-id="${escapeHtml(item.id)}" data-menu-name="${escapeHtml(item.name)}" data-menu-price="${item.price}">Add</button></div>
                     `;
                     grid.appendChild(card);
                 });
@@ -886,9 +910,39 @@
             });
 
             menuContainer.appendChild(catalog);
-            catalog.querySelectorAll('[data-menu-name]').forEach(button => button.addEventListener('click', event => {
-                addToCart(event, button.dataset.menuName, Number(button.dataset.menuPrice), button.dataset.menuId);
+            catalog.querySelectorAll('[data-menu-action]').forEach(button => button.addEventListener('click', event => {
+                const amount = button.dataset.menuAction === 'decrease' ? -1 : 1;
+                changeMenuQuantity(event, button.dataset.menuName, Number(button.dataset.menuPrice), button.dataset.menuId, amount);
             }));
+            updateMenuQuantityLabels();
+        }
+
+        function filterMenuCategory(category) {
+            document.querySelectorAll('#menuCatalog [data-category]').forEach(element => {
+                element.hidden = category !== 'all' && element.dataset.category !== category;
+            });
+            document.querySelectorAll('#categoryTabs [data-category]').forEach(button => {
+                const active = button.dataset.category === category;
+                button.classList.toggle('active', active);
+                button.setAttribute('aria-selected', active ? 'true' : 'false');
+            });
+        }
+
+        function changeMenuQuantity(event, name, price, id, amount) {
+            if (amount > 0 && !cart.some(item => item.name === name)) addToCart(event, name, price, id);
+            else {
+                const item = cart.find(entry => entry.name === name);
+                if (!item && amount < 0) return;
+                updateQuantity(cart.indexOf(item), amount);
+            }
+            updateMenuQuantityLabels();
+        }
+
+        function updateMenuQuantityLabels() {
+            document.querySelectorAll('[data-menu-qty]').forEach(label => {
+                const item = cart.find(entry => String(entry.id || entry.name) === String(label.dataset.menuQty));
+                if (item) label.textContent = item.quantity;
+            });
         }
 
         function isValidCartItem(item) {
@@ -900,10 +954,25 @@
             document.title = `${settings.name} | Online Ordering`;
             const restaurantHeading = document.querySelector('header h1');
             if (restaurantHeading) restaurantHeading.textContent = settings.name;
+            const welcomeName = document.getElementById('welcomeRestaurantName');
+            if (welcomeName) welcomeName.textContent = settings.name;
+            const tagline = document.getElementById('restaurantTagline');
+            if (tagline && settings.description) tagline.textContent = settings.description;
+            const initials = String(settings.name || 'RestroFlow').split(/\s+/).filter(Boolean).slice(0, 2).map(word => word[0]).join('').toUpperCase();
+            const initialsNode = document.getElementById('restaurantInitials');
+            const logo = document.getElementById('restaurantLogo');
+            if (initialsNode) initialsNode.textContent = initials || 'RF';
+            const logoUrl = settings.logoUrl || settings.logo || settings.logoURL;
+            if (logo && logoUrl) { logo.src = logoUrl; logo.hidden = false; if (initialsNode) initialsNode.hidden = true; }
+            if (logo) logo.onerror = () => { logo.hidden = true; if (initialsNode) initialsNode.hidden = false; };
+            const coverUrl = settings.coverImageUrl || settings.coverImage || settings.coverUrl;
+            if (coverUrl) document.querySelector('header')?.style.setProperty('--restaurant-cover', `url("${String(coverUrl).replace(/["\\)]/g, '')}")`);
             const phoneLine = document.querySelector('footer p:last-child');
             if (phoneLine && settings.phone) phoneLine.textContent = `Contact: ${settings.phone}`;
             const context = document.getElementById('orderingContext');
             if (context) context.textContent = TABLE_ID ? `Order at restaurant · Table ${TABLE_ID}` : 'Order for delivery';
+            const tableActions = document.getElementById('tableActions');
+            if (tableActions) tableActions.hidden = !TABLE_ID;
             const tableNotice = document.getElementById('tableNotice');
             if (tableNotice && TABLE_ID) { tableNotice.hidden = false; document.getElementById('checkoutTableName').textContent = `Table ${TABLE_ID}`; }
             document.querySelectorAll('.delivery-only-field').forEach(field => { field.hidden = Boolean(TABLE_ID); field.querySelectorAll('input,textarea').forEach(input => { input.required = !TABLE_ID; }); });
@@ -953,10 +1022,21 @@
                 tenantId: TENANT_ID, locationId: LOCATION_ID, orderId, phone
             }).then(result => {
                 statusElement.textContent = `Status: ${result.data.status}`;
+                renderOrderTimeline(result.data.status);
                 if (['Completed', 'Rejected', 'CANCELLED', 'COMPLETED'].includes(result.data.status)) window.clearInterval(orderStatusTimer);
             }).catch(() => {});
             checkStatus();
             orderStatusTimer = window.setInterval(checkStatus, 10000);
+        }
+
+        function renderOrderTimeline(status = 'ORDER_PLACED') {
+            const timeline = document.getElementById('orderTimeline');
+            if (!timeline) return;
+            const stages = ORDER_TYPE === 'DINE_IN'
+                ? [['ORDER_PLACED', 'Order placed'], ['ORDER_ACCEPTED', 'Accepted'], ['PREPARING', 'Preparing'], ['READY', 'Ready'], ['SERVED', 'Served'], ['PAID', 'Paid']]
+                : [['New', 'Order placed'], ['Accepted', 'Accepted'], ['Preparing', 'Preparing'], ['Completed', 'Completed']];
+            const current = stages.findIndex(stage => stage[0] === status);
+            timeline.innerHTML = stages.map((stage, index) => `<li class="${index < current ? 'done' : index === current ? 'current' : ''}"><span class="timeline-dot" aria-hidden="true"></span><span>${stage[1]}</span></li>`).join('');
         }
 
         function addToCart(event, name, price, id = '') {
@@ -972,17 +1052,27 @@
             updateCartCount();
             
             const btn = event.currentTarget;
-            btn.textContent = 'Added!';
-            btn.style.background = '#2ecc71';
-            setTimeout(() => {
-                btn.textContent = 'Add to Cart';
-                btn.style.background = '';
-            }, 1000);
+            if (btn.dataset.menuAction === 'add') {
+                btn.textContent = 'Added!';
+                btn.style.background = '#3f5a43';
+                setTimeout(() => {
+                    btn.textContent = 'Add';
+                    btn.style.background = '';
+                }, 1000);
+            }
         }
 
         function updateCartCount() {
             const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
             document.getElementById('cartCount').textContent = totalItems;
+            const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+            const mobileBar = document.getElementById('mobileCartBar');
+            if (mobileBar) mobileBar.hidden = totalItems === 0;
+            const mobileCount = document.getElementById('mobileCartCount');
+            const mobileTotal = document.getElementById('mobileCartTotal');
+            if (mobileCount) mobileCount.textContent = totalItems;
+            if (mobileTotal) mobileTotal.textContent = `₹${(subtotal * 1.08 + (ORDER_TYPE === 'DINE_IN' ? 0 : 50)).toFixed(2)}`;
+            updateMenuQuantityLabels();
         }
 
         function updateQuantity(index, change) {
@@ -1184,6 +1274,7 @@
                 if (dineInActions) dineInActions.hidden = ORDER_TYPE !== 'DINE_IN';
                 const confirmationMessage = document.getElementById('confirmationMessage');
                 if (confirmationMessage) confirmationMessage.textContent = ORDER_TYPE === 'DINE_IN' ? 'Your order has been sent to the restaurant.' : 'Your delicious meal is being prepared and will be delivered soon.';
+                renderOrderTimeline(ORDER_TYPE === 'DINE_IN' ? 'ORDER_PLACED' : 'New');
                 const estimatedTime = document.getElementById('estimatedTime');
                 if (estimatedTime) estimatedTime.textContent = ORDER_TYPE === 'DINE_IN' ? 'Estimated preparation time will be shown by the restaurant.' : 'Estimated delivery time: 30-45 minutes';
                 startOrderStatusTracking(orderId, orderData.user.phone);
