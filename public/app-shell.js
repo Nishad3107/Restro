@@ -1,4 +1,17 @@
 (function () {
+  // Prefer long polling for Firestore on Safari and restaurant networks that
+  // interrupt WebChannel connections. This must run before firebase.initializeApp.
+  if (window.firebase && typeof window.firebase.initializeApp === 'function' && !window.__restroFirestoreTransportConfigured) {
+    const initializeApp = window.firebase.initializeApp.bind(window.firebase);
+    window.firebase.initializeApp = function (...args) {
+      const app = initializeApp(...args);
+      try { window.firebase.firestore().settings({ experimentalForceLongPolling: true }); }
+      catch (error) { console.warn('Firestore transport fallback could not be configured.', error); }
+      window.__restroFirestoreTransportConfigured = true;
+      return app;
+    };
+  }
+
   const ui = {
     toast(message, type = 'success', duration = 3600) {
       let region = document.querySelector('.ui-toast-region');
